@@ -78,12 +78,13 @@ fn handle(job: Job) -> Result<()> {
         return Ok(());
     }
 
-    let host = job.printer_host.unwrap_or("172.16.0.111".to_string());
-    let mut socket = TcpStream::connect(format!("{host}:515"))?;
+    let host = job.printer_host.as_deref().unwrap_or("172.16.0.111");
+    let queue = job.printer_queue.as_deref().unwrap_or("secure");
+
+    let mut socket = TcpStream::connect((host, 515))?;
 
     let control_file = BASE64_STANDARD.decode(&job.control_file)?;
     let payload = BASE64_STANDARD.decode(&job.payload)?;
-    let queue = job.printer_queue.unwrap_or("secure".to_string());
 
     socket.set_read_timeout(Some(Duration::from_secs(max(
         30,
@@ -137,7 +138,7 @@ impl TcpExtras for TcpStream {
         let mut recv = [0u8; 1];
 
         match self.read_exact(&mut recv) {
-            Ok(_) => recv == b"\x00".to_owned(),
+            Ok(_) => recv[0] == 0,
             Err(_) => false,
         }
     }
