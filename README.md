@@ -21,6 +21,10 @@ cargo build --release
 
 The target binary produced is named `sysmontd`, although you can easily change this in [Cargo.toml](./Cargo.toml).
 
+### Reference Implementation
+
+See: https://github.com/sabbirba/preconnect/blob/main/printer.py
+
 ### License
 
 Licensed under the [GNU General Public License v3](./LICENSE).
