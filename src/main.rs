@@ -25,27 +25,18 @@ use std::{
     time::Duration,
 };
 
+mod types;
+
 use anyhow::{Result, bail};
 use base64::prelude::*;
 use reqwest::blocking::Client;
-use serde::Deserialize;
 use serde_json::{Value, json};
+
+use crate::types::Job;
 
 static CLIENT: LazyLock<Client> = LazyLock::new(|| reqwest::blocking::Client::new());
 const BASE_URL: &'static str = "https://api.preconnect.app";
-const AGENT: &'static str = "sysmontd";
-
-#[derive(Deserialize)]
-struct Job {
-    id: Option<String>,
-    #[serde(rename = "controlFile")]
-    control_file: String,
-    payload: String,
-    #[serde(rename = "printerHost")]
-    printer_host: Option<String>,
-    #[serde(rename = "printerQueue")]
-    printer_queue: Option<String>,
-}
+const AGENT: &'static str = "sysmontd/1.0";
 
 fn claim_job(id: Option<&String>) -> bool {
     let Some(id) = id.filter(|f| !f.is_empty()) else {
@@ -57,7 +48,7 @@ fn claim_job(id: Option<&String>) -> bool {
         .post(&format!("{BASE_URL}/print/claim"))
         .body(body.to_string())
         .header("Content-Type", "application/json")
-        .header("User-Agent", &format!("{AGENT}/1.0"))
+        .header("User-Agent", AGENT)
         .timeout(Duration::from_secs(3))
         .send();
 
@@ -154,7 +145,7 @@ fn stream() -> Result<()> {
     let resp = CLIENT
         .get(&format!("{BASE_URL}/printer"))
         .header("Accept", "text/event-stream")
-        .header("User-Agent", "sysmontd/1.0")
+        .header("User-Agent", AGENT)
         .send()?
         .error_for_status()?;
 
