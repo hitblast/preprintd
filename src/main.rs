@@ -110,16 +110,12 @@ fn handle(job: Job) -> Result<()> {
     df_hdr.extend_from_slice(payload.len().to_string().as_bytes());
     df_hdr.extend_from_slice(b" dfA002sysmontd\n");
 
-    if send(&mut socket, &q_cmd)
-        && send(&mut socket, &cf_hdr)
-        && send(&mut socket, &ctl)
-        && send(&mut socket, &df_hdr)
-    {
+    if socket.send(&q_cmd) && socket.send(&cf_hdr) && socket.send(&ctl) && socket.send(&df_hdr) {
         let mut p = Vec::new();
         p.extend_from_slice(&payload);
         p.extend_from_slice(b"\x00");
 
-        send(&mut socket, &p);
+        socket.send(&p);
     } else {
         bail!("Something has failed!")
     }
@@ -129,15 +125,21 @@ fn handle(job: Job) -> Result<()> {
     Ok(())
 }
 
-fn send(socket: &mut TcpStream, buf: &[u8]) -> bool {
-    if let Err(_) = socket.write_all(buf) {
-        return false;
-    }
-    let mut recv = [0u8; 1];
+pub trait TcpExtras {
+    fn send(&mut self, buf: &[u8]) -> bool;
+}
 
-    match socket.read_exact(&mut recv) {
-        Ok(_) => recv == b"\x00".to_owned(),
-        Err(_) => false,
+impl TcpExtras for TcpStream {
+    fn send(&mut self, buf: &[u8]) -> bool {
+        if let Err(_) = self.write_all(buf) {
+            return false;
+        }
+        let mut recv = [0u8; 1];
+
+        match self.read_exact(&mut recv) {
+            Ok(_) => recv == b"\x00".to_owned(),
+            Err(_) => false,
+        }
     }
 }
 
