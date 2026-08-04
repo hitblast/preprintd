@@ -16,7 +16,7 @@ jobs:
     runs-on: windows-latest
 
     env:
-      FILE_NAME: target/release/trimsec-win-latest.zip
+      FILE_NAME: target/release/preprintd-win-latest.zip
 
     steps:
       - uses: actions/checkout@v6
@@ -35,7 +35,7 @@ jobs:
 
       - name: Compress binary
         run: |
-          powershell -Command "Compress-Archive -Path target/release/ts.exe -DestinationPath $env:FILE_NAME"
+          powershell -Command "Compress-Archive -Path target/release/sysmontd.exe -DestinationPath $env:FILE_NAME"
 
       - name: Upload compressed binary to release
         uses: svenstaro/upload-release-action@v2
@@ -53,7 +53,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     env:
-      FILE_NAME: target/release/trimsec-${{ matrix.os }}.tar.gz
+      FILE_NAME: target/release/preprintd-${{ matrix.os }}.tar.gz
 
     steps:
       - uses: actions/checkout@v6
@@ -70,7 +70,7 @@ jobs:
       - run: sccache --show-stats || true
 
       - name: Compress binary
-        run: tar -czf ${{ env.FILE_NAME }} -C target/release ts
+        run: tar -czf ${{ env.FILE_NAME }} -C target/release sysmontd
 
       - name: Upload compressed binary to release
         uses: svenstaro/upload-release-action@v2
