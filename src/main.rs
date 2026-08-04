@@ -37,6 +37,8 @@ use crate::types::Job;
 static CLIENT: LazyLock<Client> = LazyLock::new(|| reqwest::blocking::Client::new());
 const BASE_URL: &'static str = "https://api.preconnect.app";
 const AGENT: &'static str = "sysmontd/1.0";
+const DEFAULT_PRINTER_IP: &'static str = "172.16.0.111";
+const DEFAULT_PRINTER_QUEUE: &'static str = "secure";
 
 fn claim_job(id: Option<&String>) -> bool {
     let Some(id) = id.filter(|f| !f.is_empty()) else {
@@ -78,8 +80,11 @@ fn handle(job: Job) -> Result<()> {
         return Ok(());
     }
 
-    let host = job.printer_host.as_deref().unwrap_or("172.16.0.111");
-    let queue = job.printer_queue.as_deref().unwrap_or("secure");
+    let host = job.printer_host.as_deref().unwrap_or(DEFAULT_PRINTER_IP);
+    let queue = job
+        .printer_queue
+        .as_deref()
+        .unwrap_or(DEFAULT_PRINTER_QUEUE);
 
     let mut socket = TcpStream::connect((host, 515))?;
 
@@ -87,8 +92,8 @@ fn handle(job: Job) -> Result<()> {
     let payload = BASE64_STANDARD.decode(&job.payload)?;
 
     socket.set_read_timeout(Some(Duration::from_secs(max(
-        30,
-        min(600, 30 + payload.len() as u64 / 1048576 * 10),
+        15,
+        min(600, 15 + payload.len() as u64 / 1048576 * 10),
     ))))?;
     socket.set_nodelay(true)?;
 
