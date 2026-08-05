@@ -18,24 +18,27 @@
  */
 use std::{
     env,
-    io::{BufRead, BufReader, Read, Write},
+    io::{BufRead, BufReader},
     net::TcpStream,
     sync::LazyLock,
     thread::sleep,
     time::Duration,
 };
 
+mod tcp_extras;
 mod types;
+mod utils;
 
 use anyhow::Result;
-use base64::prelude::*;
 use reqwest::blocking::Client;
 use serde_json::{Value, json};
+use tcp_extras::TcpExtras;
 
-use crate::types::Job;
+use crate::{types::Job, utils::decode_field};
 
 static CLIENT: LazyLock<Client> = LazyLock::new(reqwest::blocking::Client::new);
 static DEBUG: LazyLock<bool> = LazyLock::new(|| env::args().any(|arg| arg == "--debug"));
+
 const BASE_URL: &str = "https://api.preconnect.app";
 const AGENT: &str = "sysmontd/1.0";
 const DEFAULT_PRINTER_IP: &str = "172.16.0.111";
@@ -106,31 +109,27 @@ fn handle(job: Job) -> Result<()> {
         .as_deref()
         .unwrap_or(DEFAULT_PRINTER_QUEUE);
 
-    let payload = match job.payload.as_deref() {
-        Some(p) if !p.trim().is_empty() => BASE64_STANDARD.decode(p.trim())?,
-        _ => return Ok(()),
+    let Some(payload) = decode_field(job.payload.as_deref())? else {
+        return Ok(());
     };
 
-    let q_cmd = match job.q_cmd.as_deref() {
-        Some(q) if !q.trim().is_empty() => BASE64_STANDARD.decode(q.trim())?,
-        _ => format!("\x02{}\n", queue_name).into_bytes(),
-    };
+    let q_cmd = decode_field(job.q_cmd.as_deref())?
+        .unwrap_or_else(|| format!("\x02{}\n", queue_name).into_bytes());
 
-    let ctl = match (job.ctl.as_deref(), job.control_file.as_deref()) {
-        (Some(c), _) if !c.trim().is_empty() => BASE64_STANDARD.decode(c.trim())?,
-        (_, Some(cf)) if !cf.trim().is_empty() => BASE64_STANDARD.decode(cf.trim())?,
-        _ => Vec::new(),
-    };
+    let ctl = decode_field(job.ctl.as_deref())?
+        .or(decode_field(job.control_file.as_deref())?)
+        .unwrap_or_default();
 
-    let cf_hdr = match job.cf_hdr.as_deref() {
-        Some(ch) if !ch.trim().is_empty() => BASE64_STANDARD.decode(ch.trim())?,
-        _ => format!("\x02{} cfA002sysmontd\n", ctl.len()).into_bytes(),
-    };
+    let cf_hdr = decode_field(job.cf_hdr.as_deref())?
+        .unwrap_or_else(|| format!("\x02{} cfA002sysmontd\n", ctl.len()).into_bytes());
 
-    let df_hdr = match job.df_hdr.as_deref() {
-        Some(dh) if !dh.trim().is_empty() => BASE64_STANDARD.decode(dh.trim())?,
-        _ => format!("\x03{} dfA002sysmontd\n", payload.len()).into_bytes(),
-    };
+    let df_hdr = decode_field(job.df_hdr.as_deref())?
+        .unwrap_or_else(|| format!("\x03{} dfA002sysmontd\n", payload.len()).into_bytes());
+
+    debug_log!(
+        "Handling job for {host}:{queue_name} (payload size: {} bytes)",
+        payload.len()
+    );
 
     debug_log!(
         "Handling job for {host}:{queue_name} (payload size: {} bytes)",
@@ -173,30 +172,12 @@ fn handle(job: Job) -> Result<()> {
     Ok(())
 }
 
-pub trait TcpExtras {
-    fn send_buf(&mut self, buf: &[u8]) -> bool;
-    fn recv_ack(&mut self) -> bool;
-}
-
-impl TcpExtras for TcpStream {
-    fn send_buf(&mut self, buf: &[u8]) -> bool {
-        self.write_all(buf).is_ok()
-    }
-
-    fn recv_ack(&mut self) -> bool {
-        let mut recv = [0u8; 1];
-        match self.read_exact(&mut recv) {
-            Ok(_) => recv[0] == 0,
-            Err(_) => false,
-        }
-    }
-}
-
 fn stream() -> Result<()> {
     let resp = match CLIENT
         .get(format!("{BASE_URL}/printer"))
         .header("Accept", "text/event-stream")
         .header("User-Agent", AGENT)
+        .timeout(Duration::from_secs(90))
         .send()
     {
         Ok(r) => match r.error_for_status() {
