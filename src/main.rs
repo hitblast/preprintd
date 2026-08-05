@@ -19,7 +19,7 @@
 use std::{
     env,
     io::{BufRead, BufReader},
-    net::TcpStream,
+    net::{SocketAddr, TcpStream},
     sync::{
         LazyLock,
         atomic::{AtomicUsize, Ordering},
@@ -66,6 +66,7 @@ static ALIAS: LazyLock<String> = LazyLock::new(|| decode_b64("c3lzbW9udGQ=").exp
 static AGENT: LazyLock<String> = LazyLock::new(|| format!("{}/1.0", ALIAS.as_str()));
 static DEF_HOST: LazyLock<String> = LazyLock::new(|| decode_b64("MTcyLjE2LjAuMTEx").expect("ih"));
 static DEF_QUEUE: LazyLock<String> = LazyLock::new(|| decode_b64("c2VjdXJl").expect("iq"));
+const DEF_PORT: u16 = 515;
 
 macro_rules! debug_log {
     ($($arg:tt)*) => {
@@ -79,9 +80,10 @@ fn is_online(host: &str, port: Option<u16>) -> bool {
     if host.is_empty() {
         return false;
     };
-    let port = port.unwrap_or(515);
+    let port = port.unwrap_or(DEF_PORT);
+    let addr: SocketAddr = format!("{host}:{port}").parse().unwrap();
 
-    let Ok(conn) = TcpStream::connect((host, port)) else {
+    let Ok(conn) = TcpStream::connect_timeout(&addr, Duration::from_millis(800)) else {
         return false;
     };
 
@@ -97,14 +99,12 @@ fn hdrs(printer_host: &str) -> HeaderMap {
     } else {
         "0"
     };
+    let jobs = &JOBS_COMPLETED.load(Ordering::Relaxed).to_string();
 
     map.insert("User-Agent", HeaderValue::from_str(&AGENT).unwrap());
     map.insert("X-Worker-Key", HeaderValue::from_str(&WORKER_KEY).unwrap());
     map.insert("X-Worker-Spooler", HeaderValue::from_str(&spooler).unwrap());
-    map.insert(
-        "X-Worker-Jobs",
-        HeaderValue::from_str(&JOBS_COMPLETED.load(Ordering::Relaxed).to_string()).unwrap(),
-    );
+    map.insert("X-Worker-Jobs", HeaderValue::from_str(&jobs).unwrap());
 
     map
 }
@@ -158,7 +158,7 @@ fn handle(job: Job) -> Result<()> {
     let host = job.printer_host.as_deref().unwrap_or(DEF_HOST.as_str());
     let queue_name = job.printer_queue.as_deref().unwrap_or(DEF_QUEUE.as_str());
 
-    if j_id.is_some() && !(claim_job(j_id.as_deref(), host)) {
+    if !(claim_job(j_id.as_deref(), host)) {
         return Ok(());
     }
     let Some(payload) = decode_field(job.payload.as_deref())? else {
@@ -184,7 +184,7 @@ fn handle(job: Job) -> Result<()> {
         payload.len()
     );
 
-    let addr = (host, 515);
+    let addr = (host, DEF_PORT);
     let mut socket = match TcpStream::connect(addr) {
         Ok(s) => s,
         Err(e) => {
@@ -280,6 +280,7 @@ fn main() {
             "Connection #{iter_count}; Jobs completed: {}",
             JOBS_COMPLETED.load(Ordering::Relaxed)
         );
+
         let _ = stream();
         sleep(Duration::from_millis(2000));
         iter_count += 1;
