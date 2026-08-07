@@ -40,7 +40,11 @@ Create a new `systemd` service which you can enable later:
 sudo nano /etc/systemd/system/preprintd.service
 ```
 
-Write the following INI configuration in your `preprintd.service` file (make sure to replace `username` with your own desktop username, and also provide the appropriate execution command/path via `ExecStart`):
+Write the following INI configuration in your `preprintd.service` file. Make sure to replace the following things as well:
+
+1. `yourworkerkeyhere` -> Replace with your worker key credential.
+2. `username` -> Replace with the current logged-in user.
+3. `/usr/bin/preprintd` -> Replace with the correct execution path based on where you've put your binary.
 
 ```ini
 [Unit]
@@ -51,6 +55,7 @@ After=network.target
 Type=simple
 ExecStart=/usr/bin/preprintd
 Restart=always
+Environment="WORKER_KEY=yourworkerkeyhere"
 User=username
 
 [Install]
