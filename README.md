@@ -51,7 +51,8 @@ Write the following INI configuration in your `preprintd.service` file. Make sur
 ```ini
 [Unit]
 Description=PreConnect Printer Worker Daemon
-After=network.target
+Wants=network-online.target
+After=network-online.target
 
 [Service]
 Type=simple
