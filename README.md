@@ -53,7 +53,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/preprintd
+ExecStart=/usr/bin/preprintd --debug
 Restart=always
 Environment="WORKER_KEY=yourworkerkeyhere"
 User=username
@@ -71,6 +71,12 @@ sudo systemctl start preprintd.service
 
 # now check status:
 systemctl status preprintd.service
+```
+
+To check the logs in real-time, run:
+
+```bash
+journalctl -u preprintd.service -f
 ```
 
 ### Code Inspection
