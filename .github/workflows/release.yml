@@ -78,3 +78,31 @@ jobs:
           file: ${{ env.FILE_NAME }}
           tag: ${{ github.ref }}
           overwrite: true
+
+  publish:
+    needs: [build-win, build-unix]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - uses: Swatinem/rust-cache@v2
+      - uses: mozilla-actions/sccache-action@v0.0.9
+      - run: sccache --show-stats || true
+
+      # - name: Publish using cargo
+      #   run: cargo publish --token ${{ secrets.CRATES_TOKEN }}
+
+      - name: Extract latest changelog
+        id: changelog
+        run: |
+          awk '/^### v/ { if (found) exit; found=1 } found' CHANGELOG.md > latest.md
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          cat latest.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.changelog.outputs.notes }}
