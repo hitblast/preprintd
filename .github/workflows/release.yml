@@ -91,8 +91,8 @@ jobs:
       - uses: mozilla-actions/sccache-action@v0.0.9
       - run: sccache --show-stats || true
 
-      # - name: Publish using cargo
-      #   run: cargo publish --token ${{ secrets.CRATES_TOKEN }}
+      - name: Publish using cargo
+        run: cargo publish
 
       - name: Extract latest changelog
         id: changelog
