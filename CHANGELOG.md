@@ -2,6 +2,10 @@
 
 Active since `v0.1.0`.
 
+### v0.3.1
+
+- Attempt to fix issues with coercion, leading to the "WORKER_KEY is unauthorized" bug.
+
 ### v0.3.0
 
 - `X-Worker-Ident` can no longer be disabled.
