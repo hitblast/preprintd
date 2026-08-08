@@ -2,6 +2,14 @@
 
 Active since `v0.1.0`.
 
+### v0.3.0
+
+- `X-Worker-Ident` can no longer be disabled.
+- `X-Worker-Ident` is now only passed into requests during a claim-job attempt.
+- `X-Worker-Ident` is now encrypted and then Base64-encoded before being passed into HTTP requests.
+- Moved client-creation helpers into its own `client` module.
+- Added a new `encrypt()` function in the `crypto` module.
+
 ### v0.2.6
 
 - The `hdrs()` function now passes in a new `X-Worker-Ident` header with the `HeaderMap` it generates.
