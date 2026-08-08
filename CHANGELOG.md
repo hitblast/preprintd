@@ -2,6 +2,10 @@
 
 Active since `v0.1.0`.
 
+### v0.3.2
+
+- Working version; reverted some `LazyLock` shenanigans back to the old version.
+
 ### v0.3.1
 
 - Attempt to fix issues with coercion, leading to the "WORKER_KEY is unauthorized" bug.
