@@ -39,7 +39,7 @@ Create a new `systemd` service which you can enable later:
 sudo nano /etc/systemd/system/preprintd.service
 ```
 
-Write the following INI configuration in your `preprintd.service` file. Make sure to replace the following things as well:
+Write [this INI configuration](./preprintd.service) in your `preprintd.service` file. Make sure to replace the following fields/values:
 
 1. Under `Environment=`:
 
@@ -48,24 +48,10 @@ Write the following INI configuration in your `preprintd.service` file. Make sur
 - `DEF_HOST`: The default printer host to use in case the API cannot provide one.
 - `DEF_QUEUE`: The default queue name to send printable data to.
 
-2. Under `User`, replace `username` with the username you're logged in with on your local machine.
+2. Replace `/usr/bin/preprintd` with the appropriate path to the daemon binary.
 
-```ini
-[Unit]
-Description=PreConnect Printer Worker Daemon
-Wants=network-online.target
-After=network-online.target
-
-[Service]
-Type=simple
-ExecStart=/usr/bin/preprintd --debug
-Restart=always
-Environment="WORKER_KEY=yourworkerkeyhere" "AGENT=preprintd/1.0" "DEF_HOST=192.168.0.102" "DEF_QUEUE=queuename"
-User=username
-
-[Install]
-WantedBy=multi-user.target
-```
+> [!WARNING]
+> Since `preprintd` does not require access to user-specific paths, the `User` field under `[Service]` could be virtually any value depending on your environment.
 
 Enable and start it once you're done:
 
@@ -89,7 +75,7 @@ journalctl -u preprintd.service -f
 When you're going through the code, you'll see these:
 
 - The standard LPR/LPD sequence (except the code doing HTTP requests via [reqwest's](https://github.com/seanmonstar/reqwest) blocking API and every other code surrounding/using this logic).
-- LOTS of `LazyLock` usage. ALthough this is not optimal for a program that's supposed to be tiny, we've kept this pattern to reuse as much data as physically possible without hardcoding and messing up.
+- Lots of `LazyLock` usage. Although this is not optimal for a program that's supposed to be tiny, we've kept this pattern to reuse as much data as physically possible without hardcoding and messing up.
 
 #### Mercure SSE Connection Protocol
 
@@ -99,6 +85,12 @@ When you're going through the code, you'll see these:
 2. **Authorization**: `Bearer <subscriber-jwt>`
    - The subscriber JWT is created by signing `{"mercure":{"subscribe":["https://preconnect.app/printer"]}}` with HMAC-SHA256 using `WORKER_KEY`.
 3. **Replay Support**: On reconnect, pass the `Last-Event-ID` header containing the last `id: ` value received from the stream to receive any missed jobs.
+
+#### Identifying Workers
+
+While claiming a job, each worker identifies itself with an `X-Worker-Ident` header. It is encrypted using the same HMAC-SHA256 logic as mentioned above in the protocol section, and is verified on the server.
+
+When decrypted, it gets a pattern of `<UUID>_<ARCH>` (e.g. `03780793-e7af-49c1-b55d-92ff57be8c6e_aarch64-apple-darwin`). The architecture in the latter part indicates the architecture _of the compiled binary_ and not the system its running on. The UUID is generated once and kept static for the daemon's entire lifecycle (unless someone manually overrides the state file).
 
 ### Reference Implementation
 

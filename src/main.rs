@@ -16,12 +16,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
+use std::sync::LazyLock;
 use std::{
     env,
     io::{BufRead, BufReader},
-    net::{SocketAddr, TcpStream, ToSocketAddrs},
+    net::{TcpStream, ToSocketAddrs},
     sync::{
-        LazyLock, Mutex,
+        Mutex,
         atomic::{AtomicUsize, Ordering},
     },
     thread::sleep,
@@ -30,6 +31,7 @@ use std::{
 
 #[macro_use]
 mod macros;
+mod client;
 mod consts;
 mod crypto;
 mod doh;
@@ -39,7 +41,6 @@ mod types;
 use anyhow::Result;
 use reqwest::{
     StatusCode,
-    blocking::Client,
     header::{HeaderMap, HeaderValue},
 };
 use serde_json::{Value, json};
@@ -47,27 +48,20 @@ use socket2::SockRef;
 use tcp_extras::TcpExtras;
 use uuid::Uuid;
 
+use crate::crypto::encrypt;
 use crate::{
-    consts::{BASE_DOMAIN, BASE_DOMAIN_NOAPI, BASE_URL},
+    client::client,
+    consts::{BASE_DOMAIN_NOAPI, BASE_URL},
     crypto::{decrypt, make_subscriber_jwt},
-    doh::resolve_doh,
     types::{Job, LogLevel},
 };
 
-static CLIENT: LazyLock<Mutex<(Client, Instant)>> =
-    LazyLock::new(|| Mutex::new((build_client(), Instant::now())));
-
 static DEBUG: LazyLock<bool> = LazyLock::new(|| env::args().any(|arg| arg == "--debug"));
+
 static IDENT: LazyLock<String> = LazyLock::new(|| {
     let mut ident = Uuid::new_v4().to_string();
-    let should_use_pi: bool = env::args().any(|f| f == "--use-platform-ident");
-
-    if should_use_pi {
-        ident.push('_');
-        ident.push_str(std::env::consts::ARCH);
-    }
-
-    debug_log!(LogLevel::Ok, "decided ident for session: {ident}");
+    ident.push('_');
+    ident.push_str(std::env::consts::ARCH);
     ident
 });
 static LAST_EVENT_ID: LazyLock<Mutex<Option<String>>> = LazyLock::new(|| Mutex::new(None));
@@ -83,28 +77,6 @@ static DEF_QUEUE: LazyLock<String> =
 
 const DEF_PORT: u16 = 515;
 const NUL: [u8; 1] = [0u8];
-
-fn build_client() -> Client {
-    let mut builder = Client::builder()
-        .tcp_nodelay(true)
-        .tcp_keepalive(Duration::from_secs(15));
-
-    if let Some(ip) = resolve_doh(BASE_DOMAIN) {
-        builder = builder.resolve(BASE_DOMAIN, SocketAddr::new(ip, 443));
-    }
-
-    builder.build().expect("failed to build HTTP client")
-}
-
-fn client() -> Client {
-    let mut state = CLIENT.lock().expect("HTTP client lock poisoned");
-
-    if state.1.elapsed() >= Duration::from_secs(300) {
-        *state = (build_client(), Instant::now());
-    }
-
-    state.0.clone()
-}
 
 fn is_online(host: &str) -> Result<bool> {
     if host.is_empty() {
@@ -129,7 +101,6 @@ fn hdrs() -> Result<HeaderMap> {
     map.insert("User-Agent", HeaderValue::from_str(&AGENT)?);
     map.insert("X-Worker-Key", HeaderValue::from_str(&WORKER_KEY)?);
     map.insert("X-Worker-Jobs", HeaderValue::from_str(&jobs)?);
-    map.insert("X-Worker-Ident", HeaderValue::from_str(&IDENT)?);
 
     Ok(map)
 }
@@ -145,8 +116,12 @@ fn claim_job(id: Option<&str>) -> Result<bool> {
         .post(format!("{BASE_URL}/print/claim"))
         .body(body.to_string())
         .header("Content-Type", "application/json")
+        .header(
+            "X-Worker-Ident",
+            HeaderValue::from_str(&encrypt(IDENT.as_bytes(), id)?)?,
+        )
         .headers(hdrs()?)
-        .timeout(Duration::from_secs(2))
+        .timeout(Duration::from_secs(5))
         .send();
 
     let claim = match resp {
