@@ -45,6 +45,7 @@ use reqwest::{
 use serde_json::{Value, json};
 use socket2::SockRef;
 use tcp_extras::TcpExtras;
+use uuid::Uuid;
 
 use crate::{
     consts::{BASE_DOMAIN, BASE_DOMAIN_NOAPI, BASE_URL},
@@ -57,6 +58,18 @@ static CLIENT: LazyLock<Mutex<(Client, Instant)>> =
     LazyLock::new(|| Mutex::new((build_client(), Instant::now())));
 
 static DEBUG: LazyLock<bool> = LazyLock::new(|| env::args().any(|arg| arg == "--debug"));
+static IDENT: LazyLock<String> = LazyLock::new(|| {
+    let mut ident = Uuid::new_v4().to_string();
+    let should_use_pi: bool = env::args().any(|f| f == "--use-platform-ident");
+
+    if should_use_pi {
+        ident.push('_');
+        ident.push_str(std::env::consts::ARCH);
+    }
+
+    debug_log!(LogLevel::Ok, "decided ident for session: {ident}");
+    ident
+});
 static LAST_EVENT_ID: LazyLock<Mutex<Option<String>>> = LazyLock::new(|| Mutex::new(None));
 static WORKER_KEY: LazyLock<String> =
     LazyLock::new(|| env::var("WORKER_KEY").expect("missing WORKER_KEY env var"));
@@ -116,6 +129,7 @@ fn hdrs() -> Result<HeaderMap> {
     map.insert("User-Agent", HeaderValue::from_str(&AGENT)?);
     map.insert("X-Worker-Key", HeaderValue::from_str(&WORKER_KEY)?);
     map.insert("X-Worker-Jobs", HeaderValue::from_str(&jobs)?);
+    map.insert("X-Worker-Ident", HeaderValue::from_str(&IDENT)?);
 
     Ok(map)
 }
@@ -302,7 +316,7 @@ fn stream() -> Result<()> {
             }
 
             if r.status() != StatusCode::OK {
-                debug_log!(LogLevel::Error, "(Status) /printer: {}", r.status());
+                debug_log!(LogLevel::Error, "(Status) mercure endpoint: {}", r.status());
                 return Ok(());
             }
 
@@ -310,7 +324,7 @@ fn stream() -> Result<()> {
         }
 
         Err(e) => {
-            debug_log!(LogLevel::Error, "(Send) /printer: {e}");
+            debug_log!(LogLevel::Error, "(Send) mercure endpoint: {e}");
             return Ok(());
         }
     };
