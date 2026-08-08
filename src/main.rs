@@ -135,8 +135,8 @@ fn hdrs() -> Result<HeaderMap> {
     let mut map = HeaderMap::new();
     let jobs = JOBS_COMPLETED.load(Ordering::Relaxed).to_string();
 
-    map.insert("User-Agent", HeaderValue::from_str(&AGENT)?);
-    map.insert("X-Worker-Key", HeaderValue::from_str(&WORKER_KEY)?);
+    map.insert("User-Agent", HeaderValue::from_str(AGENT.as_str())?);
+    map.insert("X-Worker-Key", HeaderValue::from_str(WORKER_KEY.as_str())?);
     map.insert("X-Worker-Jobs", HeaderValue::from_str(&jobs)?);
 
     Ok(map)
@@ -155,7 +155,7 @@ fn claim_job(id: Option<&str>) -> Result<bool> {
         .header("Content-Type", "application/json")
         .header(
             "X-Worker-Ident",
-            HeaderValue::from_str(&encrypt(IDENT.as_bytes(), id)?)?,
+            HeaderValue::from_str(&encrypt(IDENT.as_str(), id)?)?,
         )
         .headers(hdrs()?)
         .timeout(Duration::from_secs(5))
@@ -204,7 +204,7 @@ fn handle(job: Job) -> Result<()> {
         .printer_host
         .as_deref()
         .filter(|host| !host.is_empty())
-        .unwrap_or(&DEF_HOST);
+        .unwrap_or(DEF_HOST.as_str());
 
     let queue_name = job
         .printer_queue
@@ -312,7 +312,7 @@ fn stream() -> Result<()> {
         .header("Accept", "text/event-stream")
         .header(
             "Authorization",
-            format!("Bearer {}", make_subscriber_jwt(&WORKER_KEY)),
+            format!("Bearer {}", make_subscriber_jwt(WORKER_KEY.as_str())),
         )
         .headers(headers)
         .send()
