@@ -42,7 +42,7 @@ pub fn decrypt(opt: Option<&str>, job_id: &str) -> Result<Vec<u8>> {
     let (iv, encrypted) = raw.split_at(16);
 
     let mut seed = Sha256::new();
-    seed.update(WORKER_KEY.as_str().as_bytes());
+    seed.update(WORKER_KEY.as_bytes());
     seed.update(iv);
     seed.update(job_id.as_bytes());
     let p = seed.finalize();
@@ -71,7 +71,7 @@ pub fn encrypt(plaintext: &str, job_id: &str) -> Result<String> {
     rand::rng().fill_bytes(&mut iv);
 
     let mut seed = Sha256::new();
-    seed.update(WORKER_KEY.as_str().as_bytes());
+    seed.update(WORKER_KEY.as_bytes());
     seed.update(&iv);
     seed.update(job_id.as_bytes());
     let p = seed.finalize();
