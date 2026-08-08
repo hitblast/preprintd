@@ -7,6 +7,7 @@ Active since `v0.1.0`.
 - `X-Worker-Ident` can no longer be disabled.
 - `X-Worker-Ident` is now only passed into requests during a claim-job attempt.
 - `X-Worker-Ident` is now encrypted and then Base64-encoded before being passed into HTTP requests.
+- `X-Worker-Ident` is now static (generated once and stored in the state directory).
 - Moved client-creation helpers into its own `client` module.
 - Added a new `encrypt()` function in the `crypto` module.
 

@@ -1,3 +1,6 @@
+use std::fs;
+use std::path::PathBuf;
+use std::str::FromStr;
 /*
  * preprintd - Printer swarm listener/worker implementation for PreConnect.
  * Copyright (C) 2026  Anindya Shiddhartha & contributors
@@ -31,12 +34,14 @@ use std::{
 
 #[macro_use]
 mod macros;
+
 mod client;
 mod consts;
 mod crypto;
 mod doh;
 mod tcp_extras;
 mod types;
+mod utils;
 
 use anyhow::Result;
 use reqwest::{
@@ -46,9 +51,9 @@ use reqwest::{
 use serde_json::{Value, json};
 use socket2::SockRef;
 use tcp_extras::TcpExtras;
-use uuid::Uuid;
 
 use crate::crypto::encrypt;
+use crate::utils::create_new_ident;
 use crate::{
     client::client,
     consts::{BASE_DOMAIN_NOAPI, BASE_URL},
@@ -58,13 +63,45 @@ use crate::{
 
 static DEBUG: LazyLock<bool> = LazyLock::new(|| env::args().any(|arg| arg == "--debug"));
 
-static IDENT: LazyLock<String> = LazyLock::new(|| {
-    let mut ident = Uuid::new_v4().to_string();
-    ident.push('_');
-    ident.push_str(std::env::consts::ARCH);
+static LAST_EVENT_ID: LazyLock<Mutex<Option<String>>> = LazyLock::new(|| Mutex::new(None));
+static STATE_DIR: LazyLock<Option<PathBuf>> = LazyLock::new(|| {
+    let Ok(p) = env::var("STATE_DIRECTORY") else {
+        return None;
+    };
+    Some(PathBuf::from_str(&p).expect("invalid STATE_DIRECTORY env var"))
+});
+
+pub static IDENT: LazyLock<String> = LazyLock::new(|| {
+    let Some(p) = &*STATE_DIR else {
+        debug_log!(
+            LogLevel::Warn,
+            "State directory indeterminate; continuing with dynamic identity..."
+        );
+        return create_new_ident();
+    };
+
+    let p = p.join(".ident");
+
+    let ident = match fs::read_to_string(&p) {
+        Ok(d) => {
+            if !d.is_empty() {
+                d.trim().to_string()
+            } else {
+                debug_log!(LogLevel::Ok, "Empty ident file, creating new identity...");
+                create_new_ident()
+            }
+        }
+        Err(e) => {
+            debug_log!(
+                LogLevel::Warn,
+                "Failed to read state dir path ({p:?}): {e}; continuing with dynamic identity..."
+            );
+            create_new_ident()
+        }
+    };
+
     ident
 });
-static LAST_EVENT_ID: LazyLock<Mutex<Option<String>>> = LazyLock::new(|| Mutex::new(None));
 static WORKER_KEY: LazyLock<String> =
     LazyLock::new(|| env::var("WORKER_KEY").expect("missing WORKER_KEY env var"));
 static AGENT: LazyLock<String> =
