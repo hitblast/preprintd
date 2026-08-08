@@ -2,7 +2,7 @@
 
 Printer swarm-worker daemon implementation for [PreConnect](https://github.com/sabbirba/preconnect).
 
-You can also visit the [Codeberg Mirror](https://codeberg.org/hitblast/preprintd).
+[(Codeberg Mirror)](https://codeberg.org/hitblast/preprintd)
 
 ### Overview
 
