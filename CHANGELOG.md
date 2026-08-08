@@ -2,6 +2,11 @@
 
 Active since `v0.1.0`.
 
+### v0.2.6
+
+- The `hdrs()` function now passes in a new `X-Worker-Ident` header with the `HeaderMap` it generates.
+- Fixed the debug log with mercure endpoint.
+
 ### v0.2.5
 
 - Removed unnecessary `LazyLock` from variables inside the `consts` (previously `constant`) module.
