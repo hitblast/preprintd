@@ -20,6 +20,7 @@ use std::str::FromStr;
  *
  */
 use std::sync::LazyLock;
+use std::sync::atomic::AtomicBool;
 use std::{
     env,
     io::{BufRead, BufReader},
@@ -67,6 +68,7 @@ use crate::{
 };
 
 static DEBUG: LazyLock<bool> = LazyLock::new(|| env::args().any(|arg| arg == "--debug"));
+static IS_PRINT_PROCESSING: AtomicBool = AtomicBool::new(false);
 
 #[cfg(target_os = "linux")]
 static INHIBIT: LazyLock<bool> = LazyLock::new(|| env::args().any(|arg| arg == "--inhibit"));
@@ -298,6 +300,8 @@ fn handle(job: Job) -> Result<()> {
         let _ = socket.shutdown(std::net::Shutdown::Both);
     }
 
+    IS_PRINT_PROCESSING.store(false, Ordering::SeqCst);
+
     Ok(())
 }
 
@@ -369,13 +373,20 @@ fn stream() -> Result<()> {
         } else if let Some(data) = line.strip_prefix("data: ")
             && let Ok(value) = serde_json::from_str::<Job>(data)
         {
-            debug_log!(
-                LogLevel::Ok,
-                "Data match! ({data}); attempting to handle it..."
-            );
-            std::thread::spawn(move || {
-                let _ = handle(value);
-            });
+            debug_log!(LogLevel::Ok, "Data match for new job!");
+
+            if IS_PRINT_PROCESSING
+                .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+                .is_ok()
+            {
+                if let Err(e) = std::thread::Builder::new().spawn(move || {
+                    let _ = handle(value);
+                    IS_PRINT_PROCESSING.store(false, Ordering::Release);
+                }) {
+                    IS_PRINT_PROCESSING.store(false, Ordering::Release);
+                    debug_log!(LogLevel::Error, "Failed to spawn print thread: {e}");
+                }
+            }
         }
     }
 
@@ -388,7 +399,6 @@ fn ping() -> Result<()> {
             .post(format!("{BASE_URL}/print/ping"))
             .headers(hdrs()?)
             .send()?;
-        debug_log!(LogLevel::Ok, "PING sent!");
         std::thread::sleep(Duration::from_millis(5000));
     }
 }
@@ -402,8 +412,10 @@ fn main() -> Result<()> {
         let _sleep_inhibitor = acquire_sleep_inhibitor()?;
     }
 
-    let _ = std::thread::spawn(|| {
-        let _ = ping().ok();
+    std::thread::spawn(|| {
+        if let Err(e) = ping() {
+            debug_log!(LogLevel::Error, "Ping thread stopped: {e}");
+        }
     });
 
     loop {
