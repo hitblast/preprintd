@@ -43,7 +43,6 @@ mod tcp_extras;
 mod types;
 mod utils;
 
-#[cfg(target_os = "linux")]
 mod zbus;
 
 use anyhow::Result;

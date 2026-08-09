@@ -1,8 +1,12 @@
+#[cfg(target_os = "linux")]
 use zbus::blocking::Connection;
+#[cfg(target_os = "linux")]
 use zbus::zvariant::OwnedFd;
 
+#[cfg(target_os = "linux")]
 use crate::ALIAS;
 
+#[cfg(target_os = "linux")]
 pub fn acquire_sleep_inhibitor() -> zbus::Result<OwnedFd> {
     let connection = Connection::system()?;
 
