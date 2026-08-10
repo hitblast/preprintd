@@ -390,7 +390,7 @@ fn stream() -> Result<()> {
         line.clear();
 
         match reader.read_line(&mut line) {
-            Ok(0) => break, // real EOF
+            Ok(0) => break,
             Ok(_) => {
                 if line.starts_with(':') {
                     continue;
@@ -443,9 +443,11 @@ fn main() -> Result<()> {
     let mut delay = 1.0_f64;
 
     #[cfg(target_os = "linux")]
-    if *INHIBIT {
-        let _sleep_inhibitor = acquire_sleep_inhibitor()?;
-    }
+    let _sleep_inhibitor = if *INHIBIT {
+        Some(acquire_sleep_inhibitor()?)
+    } else {
+        None
+    };
 
     std::thread::spawn(|| {
         if let Err(e) = ping() {

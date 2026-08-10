@@ -2,6 +2,11 @@
 
 Active since `v0.1.0`.
 
+### v0.3.8
+
+- Attempting to fix repeated Mercure stream errors and socket drops.
+- Fixed scope issue related to the inhibitor lock preventing sleep.
+
 ### v0.3.7
 
 - Set default target for Linux builds to: `x86_64-unknown-linux-musl`
