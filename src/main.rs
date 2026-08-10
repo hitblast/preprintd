@@ -389,33 +389,38 @@ fn stream() -> Result<()> {
     loop {
         line.clear();
 
-        if reader.read_line(&mut line).unwrap_or(0) == 0 {
-            break;
-        }
+        match reader.read_line(&mut line) {
+            Ok(0) => break, // real EOF
+            Ok(_) => {
+                if line.starts_with(':') {
+                    continue;
+                } else if let Some(data) = line.strip_prefix("id: ") {
+                    let mut l = LAST_EVENT_ID
+                        .lock()
+                        .expect("last event ID mutex lock poisoned");
+                    *l = Some(data.trim().to_string());
+                } else if let Some(data) = line.strip_prefix("data: ")
+                    && let Ok(value) = serde_json::from_str::<Job>(data)
+                {
+                    debug_log!(LogLevel::Ok, "Data match for new job!");
 
-        if line.starts_with(':') {
-            continue;
-        } else if let Some(data) = line.strip_prefix("id: ") {
-            let mut l = LAST_EVENT_ID
-                .lock()
-                .expect("last event ID mutex lock poisoned");
-            *l = Some(data.trim().to_string());
-        } else if let Some(data) = line.strip_prefix("data: ")
-            && let Ok(value) = serde_json::from_str::<Job>(data)
-        {
-            debug_log!(LogLevel::Ok, "Data match for new job!");
-
-            if IS_PRINT_PROCESSING
-                .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
-                .is_ok()
-            {
-                if let Err(e) = std::thread::Builder::new().spawn(move || {
-                    let _ = handle(value);
-                    IS_PRINT_PROCESSING.store(false, Ordering::Release);
-                }) {
-                    IS_PRINT_PROCESSING.store(false, Ordering::Release);
-                    debug_log!(LogLevel::Error, "Failed to spawn print thread: {e}");
+                    if IS_PRINT_PROCESSING
+                        .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+                        .is_ok()
+                    {
+                        if let Err(e) = std::thread::Builder::new().spawn(move || {
+                            let _ = handle(value);
+                            IS_PRINT_PROCESSING.store(false, Ordering::Release);
+                        }) {
+                            IS_PRINT_PROCESSING.store(false, Ordering::Release);
+                            debug_log!(LogLevel::Error, "Failed to spawn print thread: {e}");
+                        }
+                    }
                 }
+            }
+            Err(e) => {
+                debug_log!(LogLevel::Error, "Mercure stream read error: {e}");
+                break;
             }
         }
     }
