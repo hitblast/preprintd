@@ -101,9 +101,13 @@ Although most of the instructions above are primarily made for Linux (and can be
 
 #### Identifying Workers
 
-While claiming a job, each worker identifies itself with an `X-Worker-Ident` header which has a pattern of `<UUID>_<ARCH>` (e.g. `03780793-e7af-49c1-b55d-92ff57be8c6e_aarch64-apple-darwin`).
+While claiming a job, each worker identifies itself with an `X-Worker-Ident` header which has a pattern of `<UUID>;<ARCH>;<IDENTITY_TYPE>` (e.g. `03780793-e7af-49c1-b55d-92ff57be8c6e;aarch64-apple-darwin;static`).
 
-When split at an underscore (`_`), the latter part indicates the architecture _of the compiled binary_. The first part is the UUID, which is generated once and kept static for the daemon's entire lifecycle on Unix/Linux if the state directory is set properly within the daemon's service file. However, on Windows, or in environments where the state directory is unset (as partially mentioned in [Windows Inconsistencies](#windows-inconsistencies)), the worker identity is dynamic, meaning that the identity would be reset for each new session. You can easily overcome this by just setting `STATE_DIRECTORY` to a valid absolute path on your system.
+Visible from the pattern mentioned above, the worker identity can be broken down into three parts:
+
+- `<UUID>`: A randomly-generated UUID (v4) string literal, which is used to give the worker a unique identity to be correlated with.
+- `<ARCH>`: The architecture of _the compiled binary_ of the worker.
+- `<IDENTITY_TYPE>`: Another string literal representing whether the identity is **static** (when it successfully retrieves a previous identity or creates a new one under `$STATE_DIRECTORY/.ident` and _then_ retrieves it), or **dynamic** (due to issues with `std::fs` operations or just the `$STATE_DIRECTORY` path being unavailable).
 
 ### Reference Implementation
 
