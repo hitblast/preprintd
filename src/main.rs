@@ -19,7 +19,7 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::LazyLock;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::AtomicU32;
 use std::{
     env,
     io::{BufRead, BufReader},
@@ -103,6 +103,7 @@ static DEF_HOST: LazyLock<String> =
     LazyLock::new(|| env::var("DEF_HOST").expect("missing DEF_HOST env var"));
 static DEF_QUEUE: LazyLock<String> =
     LazyLock::new(|| env::var("DEF_QUEUE").expect("missing DEF_QUEUE env var"));
+static CLAIM_COUNT: AtomicU32 = AtomicU32::new(0);
 
 const DEF_PORT: u16 = 515;
 const NUL: [u8; 1] = [0u8];
@@ -135,6 +136,12 @@ fn hdrs() -> Result<HeaderMap> {
 }
 
 fn claim_job(id: &str) -> Result<bool> {
+    if CLAIM_COUNT.load(Ordering::Relaxed) >= 3 {
+        debug_log!(LogLevel::Ok, "Exhausted worker, resting...");
+        std::thread::sleep(Duration::from_secs(1));
+        CLAIM_COUNT.store(0, Ordering::Relaxed);
+    }
+
     let body = json!({ "id": id });
 
     let resp = client()
@@ -173,6 +180,7 @@ fn claim_job(id: &str) -> Result<bool> {
 
     if claim {
         debug_log!(LogLevel::Ok, "Claimed new job!");
+        CLAIM_COUNT.fetch_add(1, Ordering::Relaxed);
     } else {
         debug_log!(LogLevel::Warn, "Skipping on this job...");
     }
