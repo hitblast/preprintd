@@ -67,7 +67,7 @@ use crate::{
 };
 
 static DEBUG: LazyLock<bool> = LazyLock::new(|| env::args().any(|arg| arg == "--debug"));
-static IS_PRINT_PROCESSING: AtomicBool = AtomicBool::new(false);
+static PRINT_LOCK: Mutex<()> = Mutex::new(());
 
 #[cfg(target_os = "linux")]
 static INHIBIT: LazyLock<bool> = LazyLock::new(|| env::args().any(|arg| arg == "--inhibit"));
@@ -357,17 +357,11 @@ fn stream() -> Result<()> {
                 {
                     debug_log!(LogLevel::Ok, "Data match for new job!");
 
-                    if IS_PRINT_PROCESSING
-                        .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
-                        .is_ok()
-                    {
-                        if let Err(e) = std::thread::Builder::new().spawn(move || {
-                            let _ = handle(value);
-                            IS_PRINT_PROCESSING.store(false, Ordering::Release);
-                        }) {
-                            IS_PRINT_PROCESSING.store(false, Ordering::Release);
-                            debug_log!(LogLevel::Error, "Failed to spawn print thread: {e}");
-                        }
+                    if let Err(e) = std::thread::Builder::new().spawn(move || {
+                        let _guard = PRINT_LOCK.lock().expect("print job lock poisoned");
+                        let _ = handle(value);
+                    }) {
+                        debug_log!(LogLevel::Error, "Failed to spawn print thread: {e}");
                     }
                 }
             }
