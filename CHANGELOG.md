@@ -2,6 +2,12 @@
 
 Active since `v0.1.0`.
 
+### v0.4.0
+
+- Calling `debug_log!()` no longer requires having `crate::DEBUG` in the same scope.
+- Identity is now initialized using the `crate::ident::decide_ident` function alone.
+- `crate::ident::create_new_ident` is now private.
+
 ### v0.3.11
 
 - Placed the worker rest logic under `handle()`.

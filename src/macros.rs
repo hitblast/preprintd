@@ -1,7 +1,7 @@
 macro_rules! debug_log {
     ($l:expr, $($arg:tt)*) => {
         let _ = (|| {
-            if *DEBUG {
+            if *crate::DEBUG {
                 let format = format!(
                     "[{}] {}",
                     match $l {
