@@ -5,6 +5,7 @@ Active since `v0.1.0`.
 ### v0.3.9
 
 - Improvements have been made to how the worker identity is decided per session.
+- Removed the `IS_PRINT_PROCESSING` atomic boolean and replaced it with a `PRINT_LOCK` mutex.
 
 ### v0.3.8
 
