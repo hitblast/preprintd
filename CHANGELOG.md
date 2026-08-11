@@ -6,6 +6,7 @@ Active since `v0.1.0`.
 
 - Improvements have been made to how the worker identity is decided per session.
 - Removed the `IS_PRINT_PROCESSING` atomic boolean and replaced it with a `PRINT_LOCK` mutex.
+- Added a slight delay after completing at least 3 jobs to give chance to other, concurrently running workers.
 
 ### v0.3.8
 
