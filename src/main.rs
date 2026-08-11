@@ -1,6 +1,3 @@
-use std::fs;
-use std::path::PathBuf;
-use std::str::FromStr;
 /*
  * preprintd - Printer swarm listener/worker implementation for PreConnect.
  * Copyright (C) 2026  Anindya Shiddhartha & contributors
@@ -19,6 +16,8 @@ use std::str::FromStr;
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
+use std::path::PathBuf;
+use std::str::FromStr;
 use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 use std::{
@@ -40,9 +39,9 @@ mod client;
 mod consts;
 mod crypto;
 mod doh;
+mod ident;
 mod tcp_extras;
 mod types;
-mod utils;
 
 mod zbus;
 
@@ -55,7 +54,7 @@ use serde_json::{Value, json};
 use socket2::SockRef;
 use tcp_extras::TcpExtras;
 
-use crate::utils::create_new_ident;
+use crate::ident::{create_new_ident, decide_ident};
 
 #[cfg(target_os = "linux")]
 use crate::zbus::acquire_sleep_inhibitor;
@@ -82,62 +81,15 @@ static STATE_DIR: LazyLock<Option<PathBuf>> = LazyLock::new(|| {
 });
 
 pub static WORKER_IDENT: LazyLock<String> = LazyLock::new(|| {
-    let fallback = create_new_ident();
-
     let Some(p) = &*STATE_DIR else {
         debug_log!(
             LogLevel::Warn,
             "State directory indeterminate; using dyn ident..."
         );
-        return fallback;
+        return create_new_ident(false);
     };
 
-    let p = p.join(".ident");
-    let dir_exists = p
-        .parent()
-        .and_then(|f| Some(f.try_exists().unwrap_or(false)))
-        .unwrap_or(false);
-    let file_exists = p.try_exists().unwrap_or(false);
-
-    if !file_exists {
-        if !dir_exists {
-            if let Err(e) = fs::create_dir_all(&p) {
-                debug_log!(
-                    LogLevel::Error,
-                    "Non-existent state directory creation failure: {e}; using dyn ident..."
-                );
-                return fallback;
-            }
-        }
-
-        if let Err(e) = fs::write(&p, fallback.as_str()) {
-            debug_log!(
-                LogLevel::Error,
-                ".ident write failure: {e}; using dyn ident..."
-            );
-            return fallback;
-        }
-    }
-
-    let ident = match fs::read_to_string(&p) {
-        Ok(d) => {
-            if !d.is_empty() {
-                d.trim().to_string()
-            } else {
-                debug_log!(LogLevel::Ok, "Empty ident file, creating new identity...");
-                fallback
-            }
-        }
-        Err(e) => {
-            debug_log!(
-                LogLevel::Warn,
-                "Failed to read state dir path ({p:?}): {e}; using dyn ident..."
-            );
-            fallback
-        }
-    };
-
-    ident
+    decide_ident(p)
 });
 
 static ALIAS: LazyLock<String> =
