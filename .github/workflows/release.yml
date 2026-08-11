@@ -19,7 +19,7 @@ jobs:
     runs-on: windows-latest
 
     env:
-      FILE_NAME: target/release/preprintd-win-latest.zip
+      FILE_NAME: target/release/preprintd-win-x86_64.zip
 
     steps:
       - uses: actions/checkout@v6
@@ -54,10 +54,10 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            suffix: linux-musl
+            suffix: linux-musl-x86_64
           - os: macos-latest
             target: aarch64-apple-darwin
-            suffix: macos
+            suffix: macos-arm64
 
     runs-on: ${{ matrix.os }}
 
