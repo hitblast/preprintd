@@ -1,12 +1,18 @@
 use std::fs;
 use std::path::Path;
-
 use uuid::Uuid;
 
-use crate::DEBUG;
 use crate::types::LogLevel;
 
-pub fn decide_ident(p: &Path) -> String {
+pub fn decide_ident(p: Option<&Path>) -> String {
+    let Some(p) = p else {
+        debug_log!(
+            LogLevel::Warn,
+            "State directory indeterminate; using dyn ident..."
+        );
+        return create_new_ident(false);
+    };
+
     let p = p.join(".ident");
 
     if !p.try_exists().unwrap_or(false) {
@@ -54,7 +60,7 @@ pub fn decide_ident(p: &Path) -> String {
     }
 }
 
-pub fn create_new_ident(st: bool) -> String {
+fn create_new_ident(st: bool) -> String {
     let mut ident = Uuid::new_v4().to_string();
     ident.push(';');
     ident.push_str(std::env::consts::ARCH);

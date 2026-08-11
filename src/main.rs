@@ -54,7 +54,7 @@ use serde_json::{Value, json};
 use socket2::SockRef;
 use tcp_extras::TcpExtras;
 
-use crate::ident::{create_new_ident, decide_ident};
+use crate::ident::decide_ident;
 
 #[cfg(target_os = "linux")]
 use crate::zbus::acquire_sleep_inhibitor;
@@ -67,8 +67,6 @@ use crate::{
 };
 
 static DEBUG: LazyLock<bool> = LazyLock::new(|| env::args().any(|arg| arg == "--debug"));
-static PRINT_LOCK: Mutex<()> = Mutex::new(());
-
 #[cfg(target_os = "linux")]
 static INHIBIT: LazyLock<bool> = LazyLock::new(|| env::args().any(|arg| arg == "--inhibit"));
 
@@ -79,31 +77,21 @@ static STATE_DIR: LazyLock<Option<PathBuf>> = LazyLock::new(|| {
     };
     Some(PathBuf::from_str(&p).expect("invalid STATE_DIRECTORY env var"))
 });
-
-pub static WORKER_IDENT: LazyLock<String> = LazyLock::new(|| {
-    let Some(p) = &*STATE_DIR else {
-        debug_log!(
-            LogLevel::Warn,
-            "State directory indeterminate; using dyn ident..."
-        );
-        return create_new_ident(false);
-    };
-
-    decide_ident(p)
-});
+pub static WORKER_IDENT: LazyLock<String> = LazyLock::new(|| decide_ident(STATE_DIR.as_deref()));
 
 static ALIAS: LazyLock<String> =
     LazyLock::new(|| env::var("ALIAS").unwrap_or("preprintd".to_string()));
-
 static WORKER_KEY: LazyLock<String> =
     LazyLock::new(|| env::var("WORKER_KEY").expect("missing WORKER_KEY env var"));
 static AGENT: LazyLock<String> = LazyLock::new(|| format!("{}/1.0", ALIAS.as_str()));
-static JOBS_COMPLETED: AtomicUsize = AtomicUsize::new(0);
 static DEF_HOST: LazyLock<String> =
     LazyLock::new(|| env::var("DEF_HOST").expect("missing DEF_HOST env var"));
 static DEF_QUEUE: LazyLock<String> =
     LazyLock::new(|| env::var("DEF_QUEUE").expect("missing DEF_QUEUE env var"));
+
 static CLAIM_COUNT: AtomicU32 = AtomicU32::new(0);
+static PRINT_LOCK: Mutex<()> = Mutex::new(());
+static JOBS_COMPLETED: AtomicUsize = AtomicUsize::new(0);
 
 const DEF_PORT: u16 = 515;
 const NUL: [u8; 1] = [0u8];
