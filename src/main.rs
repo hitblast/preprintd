@@ -83,6 +83,7 @@ static STATE_DIR: LazyLock<Option<PathBuf>> = LazyLock::new(|| {
 
 pub static WORKER_IDENT: LazyLock<String> = LazyLock::new(|| {
     let fallback = create_new_ident();
+
     let Some(p) = &*STATE_DIR else {
         debug_log!(
             LogLevel::Warn,
