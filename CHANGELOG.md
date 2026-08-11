@@ -2,6 +2,10 @@
 
 Active since `v0.1.0`.
 
+### v0.3.11
+
+- Moved the placement of worker rest into `handle()`.
+
 ### v0.3.10
 
 - Fixed a bug which led to the worker ping thread not waking up or reconnecting after a ping failure.

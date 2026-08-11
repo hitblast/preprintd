@@ -136,12 +136,6 @@ fn hdrs() -> Result<HeaderMap> {
 }
 
 fn claim_job(id: &str) -> Result<bool> {
-    if CLAIM_COUNT.load(Ordering::Relaxed) >= 3 {
-        debug_log!(LogLevel::Ok, "Exhausted worker, resting...");
-        std::thread::sleep(Duration::from_secs(1));
-        CLAIM_COUNT.store(0, Ordering::Relaxed);
-    }
-
     let body = json!({ "id": id });
 
     let resp = client()
@@ -214,6 +208,12 @@ fn handle(job: Job) -> Result<()> {
         .as_deref()
         .filter(|queue| !queue.is_empty())
         .unwrap_or(&DEF_QUEUE);
+
+    if CLAIM_COUNT.load(Ordering::Relaxed) >= 3 {
+        debug_log!(LogLevel::Ok, "Worker claim limit reached, resting...");
+        std::thread::sleep(Duration::from_secs(1));
+        CLAIM_COUNT.store(0, Ordering::Relaxed);
+    }
 
     if !is_online(host)? || !(claim_job(job_id)?) {
         return Ok(());
