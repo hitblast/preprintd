@@ -36,7 +36,7 @@ See the [GitHub Releases](https://github.com/hitblast/preprintd/releases) for a 
 Create a new `systemd` service which you can enable later:
 
 ```bash
-sudo nano /etc/systemd/system/preprintd.service
+sudo touch /etc/systemd/system/preprintd.service
 ```
 
 Write [this INI configuration](./preprintd.service) in your `preprintd.service` file. Make sure to replace the following fields/values:
