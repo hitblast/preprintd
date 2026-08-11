@@ -385,11 +385,12 @@ fn stream() -> Result<()> {
 
 fn ping() -> Result<()> {
     loop {
-        let _ = client()
+        client()
             .post(format!("{BASE_URL}/print/ping"))
             .headers(hdrs()?)
             .send()?;
-        std::thread::sleep(Duration::from_millis(5000));
+
+        std::thread::sleep(Duration::from_secs(5));
     }
 }
 
@@ -405,8 +406,11 @@ fn main() -> Result<()> {
     };
 
     std::thread::spawn(|| {
-        if let Err(e) = ping() {
-            debug_log!(LogLevel::Error, "Ping thread stopped: {e}");
+        loop {
+            if let Err(e) = ping() {
+                debug_log!(LogLevel::Error, "Ping failed: {e}; re-attempting.");
+                std::thread::sleep(Duration::from_secs(1));
+            }
         }
     });
 

@@ -2,6 +2,10 @@
 
 Active since `v0.1.0`.
 
+### v0.3.10
+
+- Fixed a bug which led to the worker ping thread not waking up or reconnecting after a ping failure.
+
 ### v0.3.9
 
 - Improvements have been made to how the worker identity is decided per session.
