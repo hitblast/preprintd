@@ -4,7 +4,7 @@ Active since `v0.1.0`.
 
 ### v0.3.11
 
-- Moved the placement of worker rest into `handle()`.
+- Placed the worker rest logic under `handle()`.
 
 ### v0.3.10
 
