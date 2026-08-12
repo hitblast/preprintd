@@ -1,9 +1,24 @@
 use anyhow::Result;
+use base64::Engine;
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::prelude::*;
+use hmac::{Hmac, KeyInit, Mac};
 use rand::Rng;
 use sha2::{Digest, Sha256};
 
 use crate::WORKER_KEY;
+
+type HmacSha256 = Hmac<Sha256>;
+
+pub fn make_jwt(worker_key: &str) -> String {
+    let header = URL_SAFE_NO_PAD.encode(b"{\"alg\":\"HS256\",\"typ\":\"JWT\"}");
+    let payload = URL_SAFE_NO_PAD.encode(b"{\"sub\":\"printer\",\"iss\":\"preconnect\"}");
+    let sig_input = format!("{}.{}", header, payload);
+    let mut mac = HmacSha256::new_from_slice(worker_key.as_bytes()).expect("HMAC init failed");
+    mac.update(sig_input.as_bytes());
+    let signature = URL_SAFE_NO_PAD.encode(mac.finalize().into_bytes());
+    format!("{}.{}.{}", header, payload, signature)
+}
 
 pub fn decrypt(opt: Option<&str>, job_id: &str) -> Result<Vec<u8>> {
     let Some(value) = opt.map(str::trim).filter(|value| !value.is_empty()) else {
