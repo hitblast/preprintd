@@ -63,7 +63,7 @@ use crate::zbus::acquire_sleep_inhibitor;
 use crate::{
     client::client,
     consts::BASE_URL,
-    crypto::decrypt,
+    crypto::{decrypt, make_jwt},
     types::{Job, LogLevel},
 };
 
@@ -173,8 +173,10 @@ fn is_online(host: &str) -> Result<bool> {
 fn hdrs() -> Result<HeaderMap> {
     let mut map = HeaderMap::new();
     let jobs = JOBS_COMPLETED.load(Ordering::Relaxed).to_string();
+    let jwt = make_jwt(&WORKER_KEY);
 
     map.insert("User-Agent", HeaderValue::from_str(&AGENT)?);
+    map.insert("Authorization", HeaderValue::from_str(&format!("Bearer {jwt}"))?);
     map.insert("X-Worker-Key", HeaderValue::from_str(&WORKER_KEY)?);
     map.insert("X-Worker-Jobs", HeaderValue::from_str(&jobs)?);
     map.insert("X-Worker-Ident", HeaderValue::from_str(&WORKER_IDENT)?);
