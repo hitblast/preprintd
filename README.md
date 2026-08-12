@@ -6,7 +6,7 @@ Printer swarm-worker daemon implementation for [PreConnect](https://github.com/s
 
 ### Overview
 
-This tiny worker is just a `TcpStream` under the hood, constantly listening for jobs and claiming one if open. It works by constantly listening for incoming data from the `api.preconnect.app` endpoint (which uses [Mercure](https://mercure.rocks) under the hood for streaming real-time data), and then initiating the claiming procedure.
+This tiny worker is just a `TcpStream` under the hood, constantly listening for jobs and claiming one if open. It works by constantly listening for incoming data from the `api.preconnect.app` endpoint (which uses an HTTP SSE connection under the hood for streaming real-time data), and then initiating the claiming procedure.
 
 ### Compiling
 
@@ -85,15 +85,6 @@ When you're going through the code, you'll see these:
 - Lots of `LazyLock` usage. Although this is not optimal for a program that's supposed to be tiny, we've kept this pattern to reuse as much data as physically possible without hardcoding and messing up.
 
 More specific parts of the codebase that you may be more curious about are described below:
-
-#### Mercure SSE Connection Protocol
-
-`preprintd` streams real-time job notifications from the Mercure Hub (`/.well-known/mercure`).
-
-1. **Endpoint**: `https://api.preconnect.app/.well-known/mercure?topic=https%3A%2F%2Fpreconnect.app%2Fprinter`
-2. **Authorization**: `Bearer <subscriber-jwt>`
-   - The subscriber JWT is created by signing `{"mercure":{"subscribe":["https://preconnect.app/printer"]}}` with HMAC-SHA256 using `WORKER_KEY`.
-3. **Replay Support**: On reconnect, pass the `Last-Event-ID` header containing the last `id: ` value received from the stream to receive any missed jobs.
 
 #### Windows Inconsistencies
 
