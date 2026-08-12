@@ -61,8 +61,8 @@ use crate::zbus::acquire_sleep_inhibitor;
 
 use crate::{
     client::client,
-    consts::{BASE_DOMAIN_NOAPI, BASE_URL},
-    crypto::{decrypt, make_subscriber_jwt},
+    consts::BASE_URL,
+    crypto::decrypt,
     types::{Job, LogLevel},
 };
 
@@ -297,14 +297,8 @@ fn stream() -> Result<()> {
     }
 
     let resp = match client()
-        .get(format!(
-            "{BASE_URL}/.well-known/mercure?topic=https%3A%2F%2F{BASE_DOMAIN_NOAPI}%2Fprinter",
-        ))
+        .get(format!("{BASE_URL}/printer"))
         .header("Accept", "text/event-stream")
-        .header(
-            "Authorization",
-            format!("Bearer {}", make_subscriber_jwt(&WORKER_KEY)),
-        )
         .headers(headers)
         .send()
     {
@@ -319,7 +313,7 @@ fn stream() -> Result<()> {
             }
 
             if r.status() != StatusCode::OK {
-                debug_log!(LogLevel::Error, "(Status) mercure endpoint: {}", r.status());
+                debug_log!(LogLevel::Error, "(Status) printer stream endpoint: {}", r.status());
                 return Ok(());
             }
 
@@ -327,7 +321,7 @@ fn stream() -> Result<()> {
         }
 
         Err(e) => {
-            debug_log!(LogLevel::Error, "(Send) mercure endpoint: {e}");
+            debug_log!(LogLevel::Error, "(Send) printer stream endpoint: {e}");
             return Ok(());
         }
     };
@@ -362,7 +356,7 @@ fn stream() -> Result<()> {
                 }
             }
             Err(e) => {
-                debug_log!(LogLevel::Error, "Mercure stream read error: {e}");
+                debug_log!(LogLevel::Error, "Printer stream read error: {e}");
                 break;
             }
         }
@@ -416,7 +410,7 @@ fn main() -> Result<()> {
         delay = if result.is_ok() && long_stream {
             debug_log!(
                 LogLevel::Ok,
-                "Refreshing Mercure event stream connection..."
+                "Refreshing printer event stream connection..."
             );
             1.0
         } else {
