@@ -72,7 +72,7 @@ journalctl -u preprintd.service -f
 
 #### Inhibitor Locks (Linux-only)
 
-You may pass in the `--inhibit` flag with the execution command in order to acquire an inhibitor file descriptorr for the duration of the program. This will prevent your Linux machine from sleeping (since sleeping disrupts the TCP connections that happen when running `preprintd`) and keep the program stable.
+You may pass in the `--inhibit` flag with the execution command in order to acquire an inhibitor file descriptor for the duration of the program. This will prevent your Linux machine from sleeping (since sleeping disrupts the TCP connections that happen when running `preprintd`) and keep the program stable.
 
 > [!NOTE]
 > By default the file descriptor is derived for the `org.freedesktop.login1` service, which may or may not inhibit **GUI-based suspension** on some Linux distributions entirely. For example, the power menu of GNOME of Ubuntu does not block manual suspension, even if there is an entry clearly visible via `systemd-inhibit --list`. This was tested on Ubuntu 22.04 LTS.
