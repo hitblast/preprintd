@@ -309,9 +309,7 @@ fn stream() -> Result<()> {
     }
 
     let resp = match client()
-        .get(format!(
-            "{BASE_URL}/.well-known/mercure?topic=https%3A%2F%2F{BASE_DOMAIN_NOAPI}%2Fprinter",
-        ))
+        .get(format!("{BASE_URL}/printer"))
         .header("Accept", "text/event-stream")
         .header(
             "Authorization",
@@ -331,7 +329,7 @@ fn stream() -> Result<()> {
             }
 
             if r.status() != StatusCode::OK {
-                debug_log!(LogLevel::Error, "(Status) mercure endpoint: {}", r.status());
+                debug_log!(LogLevel::Error, "(Status) sse endpoint: {}", r.status());
                 return Ok(());
             }
 
@@ -339,7 +337,7 @@ fn stream() -> Result<()> {
         }
 
         Err(e) => {
-            debug_log!(LogLevel::Error, "(Send) mercure endpoint: {e}");
+            debug_log!(LogLevel::Error, "(Send) sse endpoint: {e}");
             return Ok(());
         }
     };
