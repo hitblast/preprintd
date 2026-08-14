@@ -2,6 +2,10 @@
 
 Active since `v0.1.0`.
 
+### v0.4.1
+
+- Fix `clippy`-suggested issues.
+
 ### v0.4.0
 
 - Calling `debug_log!()` no longer requires having `crate::DEBUG` in the same scope.
