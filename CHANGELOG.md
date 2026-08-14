@@ -2,6 +2,21 @@
 
 Active since `v0.1.0`.
 
+### v0.4.0
+
+- Calling `debug_log!()` no longer requires having `crate::DEBUG` in the same scope.
+- Identity is now initialized using the `crate::ident::decide_ident` function alone.
+- `crate::ident::create_new_ident` is now private.
+- Used bare HTTP SSE instead of Mercure.
+
+### v0.3.11
+
+- Placed the worker rest logic under `handle()`.
+
+### v0.3.10
+
+- Fixed a bug which led to the worker ping thread not waking up or reconnecting after a ping failure.
+
 ### v0.3.9
 
 - Improvements have been made to how the worker identity is decided per session.

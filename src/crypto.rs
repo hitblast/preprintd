@@ -6,18 +6,16 @@ use hmac::{Hmac, KeyInit, Mac};
 use rand::Rng;
 use sha2::{Digest, Sha256};
 
-use crate::{WORKER_KEY, consts::BASE_DOMAIN_NOAPI};
+use crate::WORKER_KEY;
 
 type HmacSha256 = Hmac<Sha256>;
 
-pub fn make_subscriber_jwt(worker_key: &str) -> String {
+pub fn make_jwt(worker_key: &str) -> String {
     let header = URL_SAFE_NO_PAD.encode(b"{\"alg\":\"HS256\",\"typ\":\"JWT\"}");
     let payload = URL_SAFE_NO_PAD.encode(b"{\"sub\":\"printer\",\"iss\":\"preconnect\"}");
-
     let sig_input = format!("{}.{}", header, payload);
     let mut mac = HmacSha256::new_from_slice(worker_key.as_bytes()).expect("HMAC init failed");
     mac.update(sig_input.as_bytes());
-
     let signature = URL_SAFE_NO_PAD.encode(mac.finalize().into_bytes());
     format!("{}.{}.{}", header, payload, signature)
 }

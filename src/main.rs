@@ -54,21 +54,19 @@ use serde_json::{Value, json};
 use socket2::SockRef;
 use tcp_extras::TcpExtras;
 
-use crate::ident::{create_new_ident, decide_ident};
+use crate::ident::decide_ident;
 
 #[cfg(target_os = "linux")]
 use crate::zbus::acquire_sleep_inhibitor;
 
 use crate::{
     client::client,
-    consts::{BASE_DOMAIN_NOAPI, BASE_URL},
-    crypto::{decrypt, make_subscriber_jwt},
+    consts::BASE_URL,
+    crypto::{decrypt, make_jwt},
     types::{Job, LogLevel},
 };
 
 static DEBUG: LazyLock<bool> = LazyLock::new(|| env::args().any(|arg| arg == "--debug"));
-static PRINT_LOCK: Mutex<()> = Mutex::new(());
-
 #[cfg(target_os = "linux")]
 static INHIBIT: LazyLock<bool> = LazyLock::new(|| env::args().any(|arg| arg == "--inhibit"));
 
@@ -79,31 +77,21 @@ static STATE_DIR: LazyLock<Option<PathBuf>> = LazyLock::new(|| {
     };
     Some(PathBuf::from_str(&p).expect("invalid STATE_DIRECTORY env var"))
 });
-
-pub static WORKER_IDENT: LazyLock<String> = LazyLock::new(|| {
-    let Some(p) = &*STATE_DIR else {
-        debug_log!(
-            LogLevel::Warn,
-            "State directory indeterminate; using dyn ident..."
-        );
-        return create_new_ident(false);
-    };
-
-    decide_ident(p)
-});
+pub static WORKER_IDENT: LazyLock<String> = LazyLock::new(|| decide_ident(STATE_DIR.as_deref()));
 
 static ALIAS: LazyLock<String> =
     LazyLock::new(|| env::var("ALIAS").unwrap_or("preprintd".to_string()));
-
 static WORKER_KEY: LazyLock<String> =
     LazyLock::new(|| env::var("WORKER_KEY").expect("missing WORKER_KEY env var"));
 static AGENT: LazyLock<String> = LazyLock::new(|| format!("{}/1.0", ALIAS.as_str()));
-static JOBS_COMPLETED: AtomicUsize = AtomicUsize::new(0);
 static DEF_HOST: LazyLock<String> =
     LazyLock::new(|| env::var("DEF_HOST").expect("missing DEF_HOST env var"));
 static DEF_QUEUE: LazyLock<String> =
     LazyLock::new(|| env::var("DEF_QUEUE").expect("missing DEF_QUEUE env var"));
+
 static CLAIM_COUNT: AtomicU32 = AtomicU32::new(0);
+static PRINT_LOCK: Mutex<()> = Mutex::new(());
+static JOBS_COMPLETED: AtomicUsize = AtomicUsize::new(0);
 
 const DEF_PORT: u16 = 515;
 const NUL: [u8; 1] = [0u8];
@@ -126,8 +114,10 @@ fn is_online(host: &str) -> Result<bool> {
 fn hdrs() -> Result<HeaderMap> {
     let mut map = HeaderMap::new();
     let jobs = JOBS_COMPLETED.load(Ordering::Relaxed).to_string();
+    let jwt = make_jwt(&WORKER_KEY);
 
     map.insert("User-Agent", HeaderValue::from_str(&AGENT)?);
+    map.insert("Authorization", HeaderValue::from_str(&format!("Bearer {jwt}"))?);
     map.insert("X-Worker-Key", HeaderValue::from_str(&WORKER_KEY)?);
     map.insert("X-Worker-Jobs", HeaderValue::from_str(&jobs)?);
     map.insert("X-Worker-Ident", HeaderValue::from_str(&WORKER_IDENT)?);
@@ -136,12 +126,6 @@ fn hdrs() -> Result<HeaderMap> {
 }
 
 fn claim_job(id: &str) -> Result<bool> {
-    if CLAIM_COUNT.load(Ordering::Relaxed) >= 3 {
-        debug_log!(LogLevel::Ok, "Exhausted worker, resting...");
-        std::thread::sleep(Duration::from_secs(1));
-        CLAIM_COUNT.store(0, Ordering::Relaxed);
-    }
-
     let body = json!({ "id": id });
 
     let resp = client()
@@ -214,6 +198,12 @@ fn handle(job: Job) -> Result<()> {
         .as_deref()
         .filter(|queue| !queue.is_empty())
         .unwrap_or(&DEF_QUEUE);
+
+    if CLAIM_COUNT.load(Ordering::Relaxed) >= 3 {
+        debug_log!(LogLevel::Ok, "Worker claim limit reached, resting...");
+        std::thread::sleep(Duration::from_secs(1));
+        CLAIM_COUNT.store(0, Ordering::Relaxed);
+    }
 
     if !is_online(host)? || !(claim_job(job_id)?) {
         return Ok(());
@@ -311,10 +301,6 @@ fn stream() -> Result<()> {
     let resp = match client()
         .get(format!("{BASE_URL}/printer"))
         .header("Accept", "text/event-stream")
-        .header(
-            "Authorization",
-            format!("Bearer {}", make_subscriber_jwt(&WORKER_KEY)),
-        )
         .headers(headers)
         .send()
     {
@@ -372,7 +358,7 @@ fn stream() -> Result<()> {
                 }
             }
             Err(e) => {
-                debug_log!(LogLevel::Error, "Mercure stream read error: {e}");
+                debug_log!(LogLevel::Error, "Printer stream read error: {e}");
                 break;
             }
         }
@@ -383,11 +369,12 @@ fn stream() -> Result<()> {
 
 fn ping() -> Result<()> {
     loop {
-        let _ = client()
+        client()
             .post(format!("{BASE_URL}/print/ping"))
             .headers(hdrs()?)
             .send()?;
-        std::thread::sleep(Duration::from_millis(5000));
+
+        std::thread::sleep(Duration::from_secs(5));
     }
 }
 
@@ -403,8 +390,11 @@ fn main() -> Result<()> {
     };
 
     std::thread::spawn(|| {
-        if let Err(e) = ping() {
-            debug_log!(LogLevel::Error, "Ping thread stopped: {e}");
+        loop {
+            if let Err(e) = ping() {
+                debug_log!(LogLevel::Error, "Ping failed: {e}; re-attempting.");
+                std::thread::sleep(Duration::from_secs(1));
+            }
         }
     });
 
@@ -422,7 +412,7 @@ fn main() -> Result<()> {
         delay = if result.is_ok() && long_stream {
             debug_log!(
                 LogLevel::Ok,
-                "Refreshing Mercure event stream connection..."
+                "Refreshing printer event stream connection..."
             );
             1.0
         } else {
