@@ -65,7 +65,7 @@ pub fn encrypt(plaintext: &str, job_id: &str) -> Result<String> {
 
     let mut seed = Sha256::new();
     seed.update(WORKER_KEY.as_bytes());
-    seed.update(&iv);
+    seed.update(iv);
     seed.update(job_id.as_bytes());
     let p = seed.finalize();
 

@@ -26,7 +26,7 @@ pub fn decide_ident(p: Option<&Path>) -> String {
                 LogLevel::Ok,
                 "State directory does not exist, attempting to create one..."
             );
-            if let Err(_) = fs::create_dir_all(p.parent().expect("invalid ident path")) {
+            if fs::create_dir_all(p.parent().expect("invalid ident path")).is_err() {
                 debug_log!(
                     LogLevel::Error,
                     "Failed to create state directory, using dyn ident."
