@@ -37,6 +37,9 @@ Create a new `systemd` service which you can enable later:
 
 ```bash
 sudo touch /etc/systemd/system/preprintd.service
+
+# or, if you want to run it as a user unit:
+# touch ~/.config/systemd/user/preprintd.service
 ```
 
 Write [this INI configuration](./preprintd.service) in your `preprintd.service` file. Make sure to replace the following fields/values:
@@ -51,24 +54,27 @@ Write [this INI configuration](./preprintd.service) in your `preprintd.service` 
 2. Replace `/usr/bin/preprintd` with the appropriate path to the daemon binary.
 3. Replace `username` with your appropriate username on the machine. **Note that this step is important if you want to use `--inhibit` later on (see below).**
 
+> [!WARNING]
+> If you prefer to use the service as a **user unit** (or, in other words, by passing in `systemctl --user`), please make sure to omit the `User` field from `[Service]`, otherwise it may cause errors during service startup.
+ 
 Once you are done, enable and start the service:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable preprintd.service
-sudo systemctl start preprintd.service
+sudo systemctl enable --now preprintd
+
+# or, for running as a user unit:
+# systemctl --user daemon-reload
+# systemctl --user enable --now preprintd
 
 # now check status:
-systemctl status preprintd.service
+systemctl status preprintd
 ```
-
-> [!WARNING]
-> If you prefer to use the service as a **user unit** (or, in other words, by passing in `systemctl --user`), please make sure to omit the `User` field from `[Service]`.
 
 To check the logs in real-time, run:
 
 ```bash
-journalctl -u preprintd.service -f
+journalctl -u preprintd -f
 ```
 
 #### Inhibitor Locks (Linux-only)
