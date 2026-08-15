@@ -49,11 +49,9 @@ Write [this INI configuration](./preprintd.service) in your `preprintd.service` 
 - (Optional) `ALIAS`: The name which determines the program's identity on the system and in TCP requests.
 
 2. Replace `/usr/bin/preprintd` with the appropriate path to the daemon binary.
+3. Replace `username` with your appropriate username on the machine. **Note that this step is important if you want to use `--inhibit` later on (see below).**
 
-> [!WARNING]
-> Since `preprintd` does not require access to user-specific paths, the `User` field under `[Service]` could be virtually any value depending on your environment.
-
-Enable and start it once you're done:
+Once you are done, enable and start the service:
 
 ```bash
 sudo systemctl daemon-reload
@@ -64,6 +62,9 @@ sudo systemctl start preprintd.service
 systemctl status preprintd.service
 ```
 
+> [!WARNING]
+> If you prefer to use the service as a **user unit** (or, in other words, by passing in `systemctl --user`), please make sure to omit the `User` field from `[Service]`.
+
 To check the logs in real-time, run:
 
 ```bash
@@ -72,10 +73,13 @@ journalctl -u preprintd.service -f
 
 #### Inhibitor Locks (Linux-only)
 
-You may pass in the `--inhibit` flag with the execution command in order to acquire an inhibitor file descriptor for the duration of the program. This will prevent your Linux machine from sleeping (since sleeping disrupts the TCP connections that happen when running `preprintd`) and keep the program stable.
+You may pass in the `--inhibit` flag while running `preprintd` to acquire an inhibitor FD (or "file descriptor") for the lifecycle of the program. This will prevent your Linux machine from sleeping. This may be crucial if you computer auto-suspends, and suspension may kill outward connections such as the running HTTP SSE from the program.
+
+The file descriptor is derived from the `org.freedesktop.login1` service. While running the daemon with `--inhibit`, you can test out the functionality by running `systemd-inhibit --list` and checking if `preprintd` pops up anywhere.
 
 > [!NOTE]
-> By default the file descriptor is derived for the `org.freedesktop.login1` service, which may or may not inhibit **GUI-based suspension** on some Linux distributions entirely. For example, the power menu of GNOME of Ubuntu does not block manual suspension, even if there is an entry clearly visible via `systemd-inhibit --list`. This was tested on Ubuntu 22.04 LTS.
+> Using inhibitor locks may not prevent manual suspension/sleep.
+
 
 ### Code Inspection
 
