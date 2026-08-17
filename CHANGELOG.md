@@ -2,6 +2,10 @@
 
 Active since `v0.1.0`.
 
+### v0.5.0
+
+- Added experimental support for the ECH Protocol for building the API client using `rustls`.
+
 ### v0.4.1
 
 - Fix `clippy`-suggested issues.
