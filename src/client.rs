@@ -1,24 +1,22 @@
 use std::{
-    net::SocketAddr,
     sync::{LazyLock, Mutex},
     time::{Duration, Instant},
 };
 
 use reqwest::blocking::Client;
 
-use crate::{consts::BASE_DOMAIN, doh::resolve_doh};
+use crate::{consts::BASE_DOMAIN, ech::ready_tls_config};
 
 static CLIENT: LazyLock<Mutex<(Client, Instant)>> =
     LazyLock::new(|| Mutex::new((build_client(), Instant::now())));
 
 fn build_client() -> Client {
-    let mut builder = Client::builder()
+    let tls = ready_tls_config(BASE_DOMAIN).expect("failed to ready TLS config");
+
+    let builder = Client::builder()
+        .tls_backend_preconfigured(tls)
         .tcp_nodelay(true)
         .tcp_keepalive(Duration::from_secs(15));
-
-    if let Some(ip) = resolve_doh(BASE_DOMAIN) {
-        builder = builder.resolve(BASE_DOMAIN, SocketAddr::new(ip, 443));
-    }
 
     builder.build().expect("failed to build HTTP client")
 }

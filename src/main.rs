@@ -38,7 +38,7 @@ mod macros;
 mod client;
 mod consts;
 mod crypto;
-mod doh;
+mod ech;
 mod ident;
 mod tcp_extras;
 mod types;
@@ -117,7 +117,10 @@ fn hdrs() -> Result<HeaderMap> {
     let jwt = make_jwt(&WORKER_KEY);
 
     map.insert("User-Agent", HeaderValue::from_str(&AGENT)?);
-    map.insert("Authorization", HeaderValue::from_str(&format!("Bearer {jwt}"))?);
+    map.insert(
+        "Authorization",
+        HeaderValue::from_str(&format!("Bearer {jwt}"))?,
+    );
     map.insert("X-Worker-Key", HeaderValue::from_str(&WORKER_KEY)?);
     map.insert("X-Worker-Jobs", HeaderValue::from_str(&jobs)?);
     map.insert("X-Worker-Ident", HeaderValue::from_str(&WORKER_IDENT)?);
@@ -315,7 +318,11 @@ fn stream() -> Result<()> {
             }
 
             if r.status() != StatusCode::OK {
-                debug_log!(LogLevel::Error, "(Status) printer stream endpoint: {}", r.status());
+                debug_log!(
+                    LogLevel::Error,
+                    "(Status) printer stream endpoint: {}",
+                    r.status()
+                );
                 return Ok(());
             }
 
