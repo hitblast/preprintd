@@ -2,6 +2,11 @@
 
 Active since `v0.1.0`.
 
+### v0.5.2
+
+- Fixed compilation errors caused by the `serde` dependency (was missing the `derive` feature).
+- `zbus` is now a Linux-only dependency.
+
 ### v0.5.1
 
 - Removed unused `rand` method and `encrypt` function from the `crypto` module.
