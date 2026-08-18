@@ -3,7 +3,7 @@ name = "preprintd"
 description = "Printer swarm-worker daemon implementation for PreConnect."
 authors = ["Anindya Shiddhartha <shiddhartha@tuta.io>"]
 license = "GPL-3.0-only"
-version = "0.5.0"
+version = "0.5.1"
 repository = "https://github.com/hitblast/preprintd"
 edition = "2024"
 
@@ -11,7 +11,6 @@ edition = "2024"
 anyhow = "1.0.104"
 base64 = "0.23.1"
 hmac = "0.13.0"
-rand = "0.10.2"
 reqwest = { version = "0.13.4", features = ["blocking", "rustls", "json"] }
 rustls = { version = "0.23.43", features = ["aws-lc-rs"] }
 rustls-platform-verifier = "0.7.0"
