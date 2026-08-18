@@ -1,4 +1,4 @@
-## `preprintd`
+## preprintd
 
 Printer swarm-worker daemon implementation for [PreConnect](https://github.com/sabbirba/preconnect).
 
