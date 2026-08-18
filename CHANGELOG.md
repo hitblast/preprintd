@@ -5,6 +5,7 @@ Active since `v0.1.0`.
 ### v0.5.1
 
 - Removed unused `rand` method and `encrypt` function from the `crypto` module.
+- Upgraded `uuid` and `zbus` dependencies.
 
 ### v0.5.0
 
