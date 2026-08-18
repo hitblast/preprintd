@@ -2,6 +2,10 @@
 
 Active since `v0.1.0`.
 
+### v0.5.1
+
+- Removed unused `rand` method and `encrypt` function from the `crypto` module.
+
 ### v0.5.0
 
 - Added experimental support for the ECH Protocol for building the API client using `rustls`.
