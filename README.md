@@ -56,7 +56,7 @@ Write [this INI configuration](./preprintd.service) in your `preprintd.service` 
 
 > [!WARNING]
 > If you prefer to use the service as a **user unit** (or, in other words, by passing in `systemctl --user`), please make sure to omit the `User` field from `[Service]`, otherwise it may cause errors during service startup.
- 
+
 Once you are done, enable and start the service:
 
 ```bash
@@ -86,13 +86,14 @@ The file descriptor is derived from the `org.freedesktop.login1` service. While 
 > [!NOTE]
 > Using inhibitor locks may not prevent manual suspension/sleep.
 
-
 ### Code Inspection
 
-When you're going through the code, you'll see these:
+Some things you might come across while navigating this project are noted down below:
 
-- The standard LPR/LPD sequence (except the code doing HTTP requests via [reqwest's](https://github.com/seanmonstar/reqwest) blocking API and every other code surrounding/using this logic).
-- Lots of `LazyLock` usage. Although this is not optimal for a program that's supposed to be tiny, we've kept this pattern to reuse as much data as physically possible without hardcoding and messing up.
+- The standard LPR/LPD sequence is present for sending requests to the LPR server. Note that the connections are **one-time**, meaning that once a job has been dispatched successfully, the socket connection is dropped. It is recreated once another job has been received.
+- Lots of `LazyLock` usage is present. Although this is not optimal for a program that's supposed to be tiny, this pattern has been used to reuse as much data as physically possible to (slightly) prevent hardcoding and messing things up.
+- The HTTP requests are made using a `reqwest::blocking::Client` instance, and in general there is zero async I/O inside the codebase. Some tasks are just offloaded to separate threads (i.e. decoupling a `Job` using `handle()`).
+- The `client` module provides a `ready_tls_config()` function which creates a custom client configuration for the `reqwest::blocking::Client` instance to enable TLS 1.3 and [ECH (Encrypted Client Hello)](https://blog.cloudflare.com/announcing-encrypted-client-hello/) support.
 
 More specific parts of the codebase that you may be more curious about are described below:
 
