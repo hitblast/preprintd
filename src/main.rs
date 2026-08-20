@@ -148,7 +148,7 @@ fn claim_job(id: &str) -> Result<bool> {
         .body(body.to_string())
         .header("Content-Type", "application/json")
         .headers(hdrs()?)
-        .timeout(Duration::from_secs(5))
+        .timeout(Duration::from_secs(10))
         .send();
 
     let claim = match resp {
