@@ -2,6 +2,10 @@
 
 Active since `v0.1.0`.
 
+### v0.6.1
+
+- Removed `Last-Event-ID` header implementation.
+
 ### v0.6.0
 
 - Zeroed panic-sites:
