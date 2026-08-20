@@ -70,7 +70,6 @@ static DEBUG: LazyLock<bool> = LazyLock::new(|| env::args().any(|arg| arg == "--
 #[cfg(target_os = "linux")]
 static INHIBIT: LazyLock<bool> = LazyLock::new(|| env::args().any(|arg| arg == "--inhibit"));
 
-static LAST_EVENT_ID: LazyLock<Mutex<Option<String>>> = LazyLock::new(|| Mutex::new(None));
 static STATE_DIR: LazyLock<Option<PathBuf>> = LazyLock::new(|| {
     let Ok(p) = env::var("STATE_DIRECTORY") else {
         return None;
@@ -290,21 +289,10 @@ fn handle(job: Job) -> Result<()> {
 }
 
 fn stream() -> Result<()> {
-    let mut headers = hdrs()?;
-
-    if let Some(last_event_id) = LAST_EVENT_ID
-        .lock()
-        .expect("last event ID mutex lock poisoned")
-        .as_deref()
-        .filter(|id| !id.is_empty())
-    {
-        headers.insert("Last-Event-ID", HeaderValue::from_str(last_event_id)?);
-    }
-
     let resp = match client()
         .get(format!("{BASE_URL}/printer"))
         .header("Accept", "text/event-stream")
-        .headers(headers)
+        .headers(hdrs()?)
         .send()
     {
         Ok(r) => {
@@ -346,9 +334,6 @@ fn stream() -> Result<()> {
             Ok(_) => {
                 if line.starts_with(':') {
                     continue;
-                } else if let Some(data) = line.strip_prefix("id: ") {
-                    let mut l = LAST_EVENT_ID.lock().unwrap_or_else(|e| e.into_inner());
-                    *l = Some(data.trim().to_string());
                 } else if let Some(data) = line.strip_prefix("data: ")
                     && let Ok(value) = serde_json::from_str::<Job>(data)
                 {
