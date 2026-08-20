@@ -14,7 +14,7 @@ fn build_client() -> anyhow::Result<Client> {
         .tls_backend_preconfigured(tls)
         .tcp_nodelay(true)
         .tcp_keepalive(Duration::from_secs(15))
-        .timeout(Duration::from_secs(30));
+        .connect_timeout(Duration::from_secs(30));
     Ok(builder.build()?)
 }
 
