@@ -1,3 +1,4 @@
+use std::fs;
 /*
  * preprintd - Printer swarm listener/worker implementation for PreConnect.
  * Copyright (C) 2026  Anindya Shiddhartha & contributors
@@ -19,7 +20,6 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::LazyLock;
-use std::sync::atomic::AtomicU32;
 use std::{
     env,
     io::{BufRead, BufReader},
@@ -74,7 +74,21 @@ static STATE_DIR: LazyLock<Option<PathBuf>> = LazyLock::new(|| {
     let Ok(p) = env::var("STATE_DIRECTORY") else {
         return None;
     };
-    Some(PathBuf::from_str(&p).expect("invalid STATE_DIRECTORY env var"))
+    if let Ok(p) = PathBuf::from_str(&p)
+        && !p.try_exists().unwrap_or(false)
+    {
+        if let Err(e) = fs::create_dir_all(&p) {
+            debug_log!(
+                LogLevel::Error,
+                "Failed to create state directory (supplied via STATE_DIRECTORY): {e}"
+            );
+            return None;
+        }
+
+        return Some(p);
+    }
+
+    None
 });
 pub static WORKER_IDENT: LazyLock<String> = LazyLock::new(|| decide_ident(STATE_DIR.as_deref()));
 
@@ -88,18 +102,17 @@ static DEF_HOST: LazyLock<String> =
 static DEF_QUEUE: LazyLock<String> =
     LazyLock::new(|| env::var("DEF_QUEUE").expect("missing DEF_QUEUE env var"));
 
-static CLAIM_COUNT: AtomicU32 = AtomicU32::new(0);
 static PRINT_LOCK: Mutex<()> = Mutex::new(());
 static JOBS_COMPLETED: AtomicUsize = AtomicUsize::new(0);
 
-const DEF_PORT: u16 = 515;
+const DEF_LPR_PORT: u16 = 515;
 const NUL: [u8; 1] = [0u8];
 
 fn is_online(host: &str) -> Result<bool> {
     if host.is_empty() {
         return Ok(false);
     }
-    sock!(s, host, DEF_PORT, Duration::from_millis(800));
+    sock!(s, host, DEF_LPR_PORT, Duration::from_millis(800));
 
     if let Ok(conn) = s {
         let _ = conn.shutdown(std::net::Shutdown::Both);
@@ -166,7 +179,6 @@ fn claim_job(id: &str) -> Result<bool> {
 
     if claim {
         debug_log!(LogLevel::Ok, "Claimed new job!");
-        CLAIM_COUNT.fetch_add(1, Ordering::Relaxed);
     } else {
         debug_log!(LogLevel::Warn, "Skipping on this job...");
     }
@@ -201,12 +213,6 @@ fn handle(job: Job) -> Result<()> {
         .filter(|queue| !queue.is_empty())
         .unwrap_or(&DEF_QUEUE);
 
-    if CLAIM_COUNT.load(Ordering::Relaxed) >= 3 {
-        debug_log!(LogLevel::Ok, "Worker claim limit reached, resting...");
-        std::thread::sleep(Duration::from_secs(1));
-        CLAIM_COUNT.store(0, Ordering::Relaxed);
-    }
-
     if !is_online(host)? || !(claim_job(job_id)?) {
         return Ok(());
     }
@@ -229,13 +235,13 @@ fn handle(job: Job) -> Result<()> {
             .unwrap_or(60.0),
     );
 
-    sock!(s, host, DEF_PORT, timeout);
+    sock!(s, host, DEF_LPR_PORT, timeout);
     let mut socket = match s {
         Ok(s) => s,
         Err(e) => {
             debug_log!(
                 LogLevel::Error,
-                "Failed to connect to {host}:{DEF_PORT}: {e}"
+                "Failed to connect to {host}:{DEF_LPR_PORT}: {e}"
             );
             return Ok(());
         }
@@ -375,9 +381,6 @@ fn ping() -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    let mut iter_count = 0;
-    let mut delay = 1.0_f64;
-
     #[cfg(target_os = "linux")]
     let _sleep_inhibitor = if *INHIBIT {
         Some(acquire_sleep_inhibitor()?)
@@ -394,13 +397,10 @@ fn main() -> Result<()> {
         }
     });
 
-    loop {
-        debug_log!(
-            LogLevel::Ok,
-            "Connection #{iter_count}; Jobs completed: {}",
-            JOBS_COMPLETED.load(Ordering::Relaxed)
-        );
+    let mut iter_count = 0;
+    let mut delay = 1.0_f64;
 
+    loop {
         let started_at = Instant::now();
         let result = stream();
 
@@ -408,14 +408,14 @@ fn main() -> Result<()> {
         delay = if result.is_ok() && long_stream {
             debug_log!(
                 LogLevel::Ok,
-                "Refreshing printer event stream connection..."
+                "{iter_count} end: Refreshing printer event stream connection..."
             );
             1.0
         } else {
             let next_delay = (delay * 2.0).min(8.0);
             debug_log!(
                 LogLevel::Warn,
-                "Re-establishing stream connection (backoff: {next_delay:.1}s)..."
+                "{iter_count} end: Re-establishing stream connection (backoff: {next_delay:.1}s)..."
             );
             next_delay
         };
