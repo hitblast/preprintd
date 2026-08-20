@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use std::{sync::LazyLock, time::Duration};
+use std::sync::LazyLock;
 
 use anyhow::Result;
 use base64::{Engine, engine::general_purpose::STANDARD};
@@ -12,7 +12,6 @@ use crate::types::LogLevel;
 
 static DOH_CLIENT: LazyLock<Client> = LazyLock::new(|| {
     Client::builder()
-        .timeout(Duration::from_millis(1500))
         .build()
         .expect("failed to build DoH client")
 });
