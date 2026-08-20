@@ -360,6 +360,11 @@ fn stream() -> Result<()> {
             }
             Err(e) => {
                 debug_log!(LogLevel::Error, "Printer stream read error: {e}");
+                let mut src = std::error::Error::source(&e);
+                while let Some(s) = src {
+                    debug_log!(LogLevel::Error, "  caused by: {s}");
+                    src = s.source();
+                }
                 break;
             }
         }
