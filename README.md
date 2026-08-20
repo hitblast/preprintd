@@ -6,7 +6,7 @@ Printer swarm-worker daemon implementation for [PreConnect](https://github.com/s
 
 ### Overview
 
-This tiny worker is just a stateless SSE/`TcpStream` hybrid under the hood, constantly listening for incoming jobs from the printer SSE endpoint of the [PreConnect API](https://github.com/sabbirba/preconnect), and dispatching it over to the on-campus LPR server via a simple `TcpStream`.s
+This tiny worker is just a stateless SSE/`TcpStream` hybrid under the hood, which constantly listens for incoming jobs from the printer SSE endpoint of the [PreConnect API](https://github.com/sabbirba/preconnect), and dispatches them over to the on-campus LPR server via a simple `TcpStream`.
 
 ### Compiling
 
