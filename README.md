@@ -6,7 +6,7 @@ Printer swarm-worker daemon implementation for [PreConnect](https://github.com/s
 
 ### Overview
 
-This tiny worker is just a `TcpStream` under the hood, constantly listening for jobs and claiming one if open. It works by constantly listening for incoming data from the `api.preconnect.app` endpoint (which uses an HTTP SSE connection under the hood for streaming real-time data), and then initiating the claiming procedure.
+This tiny worker is just a stateless SSE/`TcpStream` hybrid under the hood, constantly listening for incoming jobs from the printer SSE endpoint of the [PreConnect API](https://github.com/sabbirba/preconnect), and dispatching it over to the on-campus LPR server via a simple `TcpStream`.s
 
 ### Compiling
 
