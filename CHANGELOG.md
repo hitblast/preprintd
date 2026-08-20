@@ -2,6 +2,10 @@
 
 Active since `v0.1.0`.
 
+### v0.6.2
+
+- Fixed a silly but critical bug with reading the identity file caused in v0.6.1.
+
 ### v0.6.1
 
 - Removed `Last-Event-ID` header implementation.

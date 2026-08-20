@@ -18,7 +18,6 @@ use std::fs;
  *
  */
 use std::path::PathBuf;
-use std::str::FromStr;
 use std::sync::LazyLock;
 use std::{
     env,
@@ -74,9 +73,10 @@ static STATE_DIR: LazyLock<Option<PathBuf>> = LazyLock::new(|| {
     let Ok(p) = env::var("STATE_DIRECTORY") else {
         return None;
     };
-    if let Ok(p) = PathBuf::from_str(&p)
-        && !p.try_exists().unwrap_or(false)
-    {
+
+    let p = PathBuf::from(p);
+
+    if !p.try_exists().unwrap_or(false) {
         if let Err(e) = fs::create_dir_all(&p) {
             debug_log!(
                 LogLevel::Error,
@@ -84,12 +84,11 @@ static STATE_DIR: LazyLock<Option<PathBuf>> = LazyLock::new(|| {
             );
             return None;
         }
-
-        return Some(p);
     }
 
-    None
+    Some(p)
 });
+
 pub static WORKER_IDENT: LazyLock<String> = LazyLock::new(|| decide_ident(STATE_DIR.as_deref()));
 
 static ALIAS: LazyLock<String> =
