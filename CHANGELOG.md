@@ -5,6 +5,11 @@ Active since `v0.1.0`.
 ### v0.6.1
 
 - Removed `Last-Event-ID` header implementation.
+- `STATE_DIRECTORY` is now auto-created if it is passed in as an environment variable but does not exist.
+- Improved path management for the `.ident` file inside the `crate::ident::decide_ident` function.
+- Removed internal `CLAIM_COUNT` delay - true worker race has been unleashed again!
+- Removed `.timeout()` while building the HTTP client inside `crate::client::build_client`, and instead replaced it with a `.connect_timeout()`.
+- Following the change mentioned immediately above, request timeouts have been adjusted for all `reqwest::blocking::Client` instances inside the codebase.
 
 ### v0.6.0
 
