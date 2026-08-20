@@ -17,30 +17,11 @@ pub fn decide_ident(p: Option<&Path>) -> String {
 
     if !p.try_exists().unwrap_or(false) {
         let i = create_new_ident(true);
-        if !p
-            .parent()
-            .map(|f| f.try_exists().unwrap_or(false))
-            .unwrap_or(false)
-        {
-            debug_log!(
-                LogLevel::Ok,
-                "State directory does not exist, attempting to create one..."
-            );
-            if fs::create_dir_all(p.parent().expect("invalid ident path")).is_err() {
-                debug_log!(
-                    LogLevel::Error,
-                    "Failed to create state directory, using dyn ident."
-                );
-                return create_new_ident(false);
-            }
-        }
-
         if let Err(e) = fs::write(&p, &i) {
             debug_log!(
                 LogLevel::Error,
                 ".ident write failure: {e}; using dyn ident..."
             );
-
             create_new_ident(false)
         } else {
             debug_log!(LogLevel::Ok, "Generated new static identity: {i}");
