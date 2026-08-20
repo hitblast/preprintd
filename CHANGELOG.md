@@ -2,6 +2,15 @@
 
 Active since `v0.1.0`.
 
+### v0.6.0
+
+- Zeroed panic-sites:
+  - In `sock!()`, the DNS resolution is now offloaded to a new thread and waited upon with a timeout instead of blocking forever.
+  - The `sock!()` macro now also uses a saturating duration to calculate remaining retries.
+- An explicit 30-second timeout has been added to the `crate::client::build_client` function.
+- `crate::client::CLIENT` now uses `build_client_or_default` as its builder-function, which internally retries for 10 times (backoff included) before panicking unavoidably.
+- Improved client-rebuild timing logic in `crate::client::client`.
+
 ### v0.5.2
 
 - Fixed compilation errors caused by the `serde` dependency (was missing the `derive` feature).

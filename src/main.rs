@@ -347,9 +347,7 @@ fn stream() -> Result<()> {
                 if line.starts_with(':') {
                     continue;
                 } else if let Some(data) = line.strip_prefix("id: ") {
-                    let mut l = LAST_EVENT_ID
-                        .lock()
-                        .expect("last event ID mutex lock poisoned");
+                    let mut l = LAST_EVENT_ID.lock().unwrap_or_else(|e| e.into_inner());
                     *l = Some(data.trim().to_string());
                 } else if let Some(data) = line.strip_prefix("data: ")
                     && let Ok(value) = serde_json::from_str::<Job>(data)
@@ -357,8 +355,14 @@ fn stream() -> Result<()> {
                     debug_log!(LogLevel::Ok, "Data match for new job!");
 
                     if let Err(e) = std::thread::Builder::new().spawn(move || {
-                        let _guard = PRINT_LOCK.lock().expect("print job lock poisoned");
-                        let _ = handle(value);
+                        let _guard = PRINT_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+                        if let Err(panic) =
+                            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                                let _ = handle(value);
+                            }))
+                        {
+                            debug_log!(LogLevel::Error, "Job handler panicked: {:?}", panic);
+                        }
                     }) {
                         debug_log!(LogLevel::Error, "Failed to spawn print thread: {e}");
                     }
