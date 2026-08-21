@@ -143,7 +143,7 @@ fn hdrs() -> Result<HeaderMap> {
 fn claim_job(id: &str) -> Result<bool> {
     let body = json!({ "id": id });
 
-    let resp = client()
+    let resp = client()?
         .post(format!("{BASE_URL}/print/claim"))
         .body(body.to_string())
         .header("Content-Type", "application/json")
@@ -295,7 +295,7 @@ fn handle(job: Job) -> Result<()> {
 }
 
 fn stream() -> Result<()> {
-    let resp = match client()
+    let resp = match client()?
         .get(format!("{BASE_URL}/printer"))
         .header("Accept", "text/event-stream")
         .headers(hdrs()?)
@@ -376,7 +376,7 @@ fn stream() -> Result<()> {
 
 fn ping() -> Result<()> {
     loop {
-        client()
+        client()?
             .post(format!("{BASE_URL}/print/ping"))
             .headers(hdrs()?)
             .send()?;
