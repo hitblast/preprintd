@@ -25,11 +25,9 @@ zbus = "5.19.0"
 
 [lints.clippy]
 unwrap_used = "deny"
+expect_used = "deny"
 unreachable = "deny"
 must_use_candidate = "warn"
-
-[lints.rust]
-unused_must_use = "deny"
 
 [profile.release]
 opt-level = "z"

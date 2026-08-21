@@ -37,6 +37,7 @@ pub fn client() -> Result<Client> {
         }
     }
 
+    #[allow(clippy::expect_used)]
     Ok(state
         .0
         .as_ref()
