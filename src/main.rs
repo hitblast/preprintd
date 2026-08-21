@@ -95,7 +95,7 @@ static ALIAS: LazyLock<String> =
     LazyLock::new(|| env::var("ALIAS").unwrap_or("preprintd".to_string()));
 static WORKER_KEY: LazyLock<String> =
     LazyLock::new(|| env::var("WORKER_KEY").expect("missing WORKER_KEY env var"));
-static AGENT: LazyLock<String> = LazyLock::new(|| format!("{}/1.0", ALIAS.as_str()));
+static AGENT: LazyLock<String> = LazyLock::new(|| format!("{}/{}", ALIAS.as_str(), VERSION));
 static DEF_HOST: LazyLock<String> =
     LazyLock::new(|| env::var("DEF_HOST").expect("missing DEF_HOST env var"));
 static DEF_QUEUE: LazyLock<String> =
@@ -104,6 +104,7 @@ static DEF_QUEUE: LazyLock<String> =
 static PRINT_LOCK: Mutex<()> = Mutex::new(());
 static JOBS_COMPLETED: AtomicUsize = AtomicUsize::new(0);
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 const DEF_LPR_PORT: u16 = 515;
 const NUL: [u8; 1] = [0u8];
 

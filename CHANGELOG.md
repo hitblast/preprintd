@@ -2,6 +2,11 @@
 
 Active since `v0.1.0`.
 
+### v0.6.3
+
+- `User-Agent` header now outputs the package version in the latter part of it.
+- Printer stream-read errors are now slighly more elaborate (for testing purposes).
+
 ### v0.6.2
 
 - Fixed a silly but critical bug with reading the identity file caused in v0.6.1.
