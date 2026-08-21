@@ -10,6 +10,7 @@ use rustls_platform_verifier::BuilderVerifierExt;
 use crate::types::LogLevel;
 
 static DOH_CLIENT: LazyLock<Client> = LazyLock::new(|| {
+    #[allow(clippy::expect_used)]
     Client::builder()
         .build()
         .expect("failed to build DoH client")

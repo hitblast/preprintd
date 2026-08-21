@@ -13,6 +13,7 @@ pub fn make_jwt(worker_key: &str) -> String {
     let header = URL_SAFE_NO_PAD.encode(b"{\"alg\":\"HS256\",\"typ\":\"JWT\"}");
     let payload = URL_SAFE_NO_PAD.encode(b"{\"sub\":\"printer\",\"iss\":\"preconnect\"}");
     let sig_input = format!("{}.{}", header, payload);
+    #[allow(clippy::expect_used)]
     let mut mac = HmacSha256::new_from_slice(worker_key.as_bytes()).expect("HMAC init failed");
     mac.update(sig_input.as_bytes());
     let signature = URL_SAFE_NO_PAD.encode(mac.finalize().into_bytes());

@@ -76,14 +76,14 @@ static STATE_DIR: LazyLock<Option<PathBuf>> = LazyLock::new(|| {
 
     let p = PathBuf::from(p);
 
-    if !p.try_exists().unwrap_or(false) {
-        if let Err(e) = fs::create_dir_all(&p) {
-            debug_log!(
-                LogLevel::Error,
-                "Failed to create state directory (supplied via STATE_DIRECTORY): {e}"
-            );
-            return None;
-        }
+    if !p.try_exists().unwrap_or(false)
+        && let Err(e) = fs::create_dir_all(&p)
+    {
+        debug_log!(
+            LogLevel::Error,
+            "Failed to create state directory (supplied via STATE_DIRECTORY): {e}"
+        );
+        return None;
     }
 
     Some(p)
@@ -93,11 +93,14 @@ pub static WORKER_IDENT: LazyLock<String> = LazyLock::new(|| decide_ident(STATE_
 
 static ALIAS: LazyLock<String> =
     LazyLock::new(|| env::var("ALIAS").unwrap_or("preprintd".to_string()));
+#[allow(clippy::expect_used)]
 static WORKER_KEY: LazyLock<String> =
     LazyLock::new(|| env::var("WORKER_KEY").expect("missing WORKER_KEY env var"));
 static AGENT: LazyLock<String> = LazyLock::new(|| format!("{}/{}", ALIAS.as_str(), VERSION));
+#[allow(clippy::expect_used)]
 static DEF_HOST: LazyLock<String> =
     LazyLock::new(|| env::var("DEF_HOST").expect("missing DEF_HOST env var"));
+#[allow(clippy::expect_used)]
 static DEF_QUEUE: LazyLock<String> =
     LazyLock::new(|| env::var("DEF_QUEUE").expect("missing DEF_QUEUE env var"));
 
