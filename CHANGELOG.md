@@ -6,6 +6,9 @@ Active since `v0.1.0`.
 
 - `User-Agent` header now outputs the package version in the latter part of it.
 - Printer stream-read errors are now slighly more elaborate (for testing purposes).
+- `crate::client::build_client_or_default()` has been removed.
+- Following the change above, the functions in the `client` module have been modified to propagate client-creation errors upto the main function to retry with backoff instead of panicking.
+- The clients used for the primary network requests are now refreshed 250 seconds after their creation (previously 300).
 
 ### v0.6.2
 

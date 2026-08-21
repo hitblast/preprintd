@@ -1,5 +1,4 @@
-use std::sync::Arc;
-use std::sync::LazyLock;
+use std::sync::{Arc, LazyLock};
 
 use anyhow::Result;
 use base64::{Engine, engine::general_purpose::STANDARD};
