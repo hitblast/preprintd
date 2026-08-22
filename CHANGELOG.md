@@ -2,6 +2,12 @@
 
 Active since `v0.1.0`.
 
+### v0.6.4
+
+- Removed pinger thread.
+- The `SO_LINGER` option is no longer set if the printer socket errors out while sending a job.
+- Regardless of error events in the printer socket connection, the `abortive` and `transferred` variables has been removed, and the socket is always shut down gracefully.
+
 ### v0.6.3
 
 - `User-Agent` header now outputs the package version in the latter part of it.

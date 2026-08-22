@@ -271,28 +271,24 @@ fn handle(job: Job) -> Result<()> {
             && socket.recv_ack()?)
     })();
 
-    let abortive = match transferred {
+    match transferred {
         Ok(true) => {
-            debug_log!(
-                LogLevel::Ok,
-                "Job transferred successfully. \
-                 Shutting down current socket connection."
-            );
-
+            debug_log!(LogLevel::Ok, "Job transferred successfully.");
             JOBS_COMPLETED.fetch_add(1, Ordering::Relaxed);
-            false
         }
-        Ok(false) => false,
+        Ok(false) => {
+            debug_log!(
+                LogLevel::Warn,
+                "Unknown failure while sending printer socket."
+            );
+        }
         Err(e) => {
             debug_log!(LogLevel::Error, "Printer transfer failed: {e}");
-            let _ = SockRef::from(&socket).set_linger(Some(Duration::ZERO));
-            true
         }
     };
 
-    if !abortive {
-        let _ = socket.shutdown(std::net::Shutdown::Both);
-    }
+    let _ = socket.shutdown(std::net::Shutdown::Both);
+    debug_log!(LogLevel::Ok, "Shutting down current socket connection.");
 
     Ok(())
 }
@@ -377,17 +373,6 @@ fn stream() -> Result<()> {
     Ok(())
 }
 
-fn ping() -> Result<()> {
-    loop {
-        client()?
-            .post(format!("{BASE_URL}/print/ping"))
-            .headers(hdrs()?)
-            .send()?;
-
-        std::thread::sleep(Duration::from_secs(5));
-    }
-}
-
 fn main() -> Result<()> {
     #[cfg(target_os = "linux")]
     let _sleep_inhibitor = if *INHIBIT {
@@ -395,15 +380,6 @@ fn main() -> Result<()> {
     } else {
         None
     };
-
-    std::thread::spawn(|| {
-        loop {
-            if let Err(e) = ping() {
-                debug_log!(LogLevel::Error, "Ping failed: {e}; re-attempting.");
-                std::thread::sleep(Duration::from_secs(1));
-            }
-        }
-    });
 
     let mut iter_count = 0;
     let mut delay = 1.0_f64;
