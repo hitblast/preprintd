@@ -2,6 +2,10 @@
 
 Active since `v0.1.0`.
 
+### v0.6.5
+
+- Removed the JWT authorization header from the request flow.
+
 ### v0.6.4
 
 - Removed pinger thread.
