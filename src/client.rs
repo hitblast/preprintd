@@ -22,7 +22,7 @@ fn build_client() -> anyhow::Result<Client> {
 pub fn client() -> Result<Client> {
     let mut state = CLIENT.lock().unwrap_or_else(|e| e.into_inner());
 
-    let needs_build = state.0.is_none() || state.1.elapsed() >= Duration::from_secs(250);
+    let needs_build: bool = state.0.is_none() || state.1.elapsed() >= Duration::from_secs(250);
 
     if needs_build {
         match build_client() {

@@ -16,7 +16,7 @@ pub fn decrypt(opt: Option<&str>, job_id: &str) -> Result<Vec<u8>> {
         return Ok(Vec::new());
     }
 
-    let (iv, encrypted) = raw.split_at(16);
+    let (iv, encrypted): (&[u8], &[u8]) = raw.split_at(16);
 
     let mut seed = Sha256::new();
     seed.update(WORKER_KEY.as_bytes());

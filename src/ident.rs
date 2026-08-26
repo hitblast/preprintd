@@ -13,8 +13,7 @@ pub fn decide_ident(p: Option<&Path>) -> String {
         return create_new_ident(false);
     };
 
-    let p = p.join(".ident");
-
+    let p: std::path::PathBuf = p.join(".ident");
     if !p.try_exists().unwrap_or(false) {
         let i = create_new_ident(true);
         if let Err(e) = fs::write(&p, &i) {
