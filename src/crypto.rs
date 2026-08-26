@@ -24,7 +24,7 @@ pub fn decrypt(opt: Option<&str>, job_id: &str) -> Result<Vec<u8>> {
     seed.update(job_id.as_bytes());
     let p = seed.finalize();
 
-    let mut output = Vec::with_capacity(encrypted.len());
+    let mut output: Vec<u8> = Vec::with_capacity(encrypted.len());
 
     for (idx, chunk) in encrypted.chunks(32).enumerate() {
         let mut hasher = Sha256::new();
