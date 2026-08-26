@@ -10,8 +10,8 @@ static CLIENT: LazyLock<Mutex<(Option<Client>, Instant)>> =
     LazyLock::new(|| Mutex::new((None, Instant::now())));
 
 fn build_client() -> anyhow::Result<Client> {
-    let tls = ready_tls_config(BASE_DOMAIN)?;
-    let builder = Client::builder()
+    let tls: rustls::ClientConfig = ready_tls_config(BASE_DOMAIN)?;
+    let builder: reqwest::blocking::ClientBuilder = Client::builder()
         .tls_backend_preconfigured(tls)
         .tcp_nodelay(true)
         .tcp_keepalive(Duration::from_secs(15))
