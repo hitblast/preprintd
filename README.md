@@ -103,13 +103,13 @@ Although most of the instructions above are primarily made for Linux (and can be
 
 #### Identifying Workers
 
-While claiming a job, each worker identifies itself with an `X-Worker-Ident` header which has a pattern of `<UUID>;<ARCH>;<IDENTITY_TYPE>` (e.g. `03780793-e7af-49c1-b55d-92ff57be8c6e;aarch64-apple-darwin;static`).
+While claiming a job, each worker identifies itself with an `X-Worker-Ident` header which has a pattern of `<UUID>;<ARCH>;<IDENTITY_TYPE>` (e.g. `03780793-e7af-49c1-b55d-92ff57be8c6e;aarch64-apple-darwin;st`).
 
 Visible from the pattern mentioned above, the worker identity can be broken down into three parts:
 
 - `<UUID>`: A randomly-generated UUID (v4) string literal, which is used to give the worker a unique identity to be correlated with.
 - `<ARCH>`: The architecture of _the compiled binary_ of the worker.
-- `<IDENTITY_TYPE>`: Another string literal representing whether the identity is **static** (when it successfully retrieves a previous identity or creates a new one under `$STATE_DIRECTORY/.ident` and _then_ retrieves it), or **dynamic** (due to issues with `std::fs` operations or just the `$STATE_DIRECTORY` path being unavailable).
+- `<IDENTITY_TYPE>`: Another string literal representing whether the identity is `st` (static; when it successfully retrieves a previous identity or creates a new one under `$STATE_DIRECTORY/.ident` and _then_ retrieves it), or `dyn` (dynamic; due to issues with `std::fs` operations or just the `$STATE_DIRECTORY` path being unavailable).
 
 ### Reference Implementation
 

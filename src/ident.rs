@@ -45,6 +45,6 @@ fn create_new_ident(st: bool) -> String {
     ident.push(';');
     ident.push_str(std::env::consts::ARCH);
     ident.push(';');
-    ident.push_str(if st { "static" } else { "dynamic" });
+    ident.push_str(if st { "st" } else { "dyn" });
     ident
 }
