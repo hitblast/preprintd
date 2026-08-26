@@ -127,8 +127,8 @@ fn is_online(host: &str) -> Result<bool> {
 }
 
 fn hdrs() -> Result<HeaderMap> {
-    let mut map = HeaderMap::new();
-    let jobs = JOBS_COMPLETED.load(Ordering::Relaxed).to_string();
+    let mut map: HeaderMap = HeaderMap::new();
+    let jobs: String = JOBS_COMPLETED.load(Ordering::Relaxed).to_string();
 
     map.insert("User-Agent", HeaderValue::from_str(&AGENT)?);
     map.insert("X-Worker-Key", HeaderValue::from_str(&WORKER_KEY)?);
@@ -139,7 +139,7 @@ fn hdrs() -> Result<HeaderMap> {
 }
 
 fn claim_job(id: &str) -> Result<bool> {
-    let body = json!({ "id": id });
+    let body: Value = json!({ "id": id });
 
     let resp = client()?
         .post(format!("{BASE_URL}/print/claim"))
@@ -149,7 +149,7 @@ fn claim_job(id: &str) -> Result<bool> {
         .timeout(Duration::from_secs(10))
         .send();
 
-    let claim = match resp {
+    let claim: bool = match resp {
         Ok(r) => {
             if r.status() != StatusCode::OK {
                 debug_log!(
