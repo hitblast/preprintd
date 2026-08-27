@@ -5,6 +5,8 @@ Active since `v0.1.0`.
 ### v0.7.0
 
 - The preconfigured TLS backend with ECH is now optional (if unable to be resolved).
+- Implemented a proper DoH (DNS over HTTPS) resolver struct (`DohResolver`) using the `reqwest::dns::Resolve` trait.
+- Internal adjustments include reducing the dependency on `serde_json::Value` and using static types for deserialization instead.
 
 ### v0.6.5
 

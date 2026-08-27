@@ -1,8 +1,12 @@
-use crate::{consts::BASE_DOMAIN, ech::ready_tls_config, types::LogLevel};
+use crate::{
+    consts::BASE_DOMAIN,
+    doh::{DohResolver, ready_tls_config},
+    types::LogLevel,
+};
 use anyhow::Result;
 use reqwest::blocking::Client;
 use std::{
-    sync::{LazyLock, Mutex},
+    sync::{Arc, LazyLock, Mutex},
     time::{Duration, Instant},
 };
 
@@ -10,7 +14,9 @@ static CLIENT: LazyLock<Mutex<(Option<Client>, Instant)>> =
     LazyLock::new(|| Mutex::new((None, Instant::now())));
 
 fn build_client() -> anyhow::Result<Client> {
+    let resolver = Arc::new(DohResolver::new());
     let mut builder: reqwest::blocking::ClientBuilder = Client::builder()
+        .dns_resolver(resolver)
         .tcp_nodelay(true)
         .tcp_keepalive(Duration::from_secs(15))
         .connect_timeout(Duration::from_secs(30));

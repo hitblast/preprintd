@@ -37,11 +37,10 @@ mod macros;
 mod client;
 mod consts;
 mod crypto;
-mod ech;
+mod doh;
 mod ident;
 mod tcp_extras;
 mod types;
-
 mod zbus;
 
 use anyhow::Result;
