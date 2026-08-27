@@ -7,8 +7,6 @@ use rustls::client::{ClientConfig, EchConfig, EchMode};
 use rustls::crypto::aws_lc_rs;
 use rustls_platform_verifier::BuilderVerifierExt;
 
-use crate::types::LogLevel;
-
 static DOH_CLIENT: LazyLock<Client> = LazyLock::new(|| {
     #[allow(clippy::expect_used)]
     Client::builder()
@@ -47,6 +45,5 @@ pub fn ready_tls_config(domain: &str) -> Result<ClientConfig> {
         .with_platform_verifier()?
         .with_no_client_auth();
 
-    debug_log!(LogLevel::Ok, "Launching with custom client configuration.");
     Ok(tls)
 }

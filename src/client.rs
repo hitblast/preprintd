@@ -10,12 +10,24 @@ static CLIENT: LazyLock<Mutex<(Option<Client>, Instant)>> =
     LazyLock::new(|| Mutex::new((None, Instant::now())));
 
 fn build_client() -> anyhow::Result<Client> {
-    let tls: rustls::ClientConfig = ready_tls_config(BASE_DOMAIN)?;
-    let builder: reqwest::blocking::ClientBuilder = Client::builder()
-        .tls_backend_preconfigured(tls)
+    let mut builder: reqwest::blocking::ClientBuilder = Client::builder()
         .tcp_nodelay(true)
         .tcp_keepalive(Duration::from_secs(15))
         .connect_timeout(Duration::from_secs(30));
+
+    if let Ok(cfg) = ready_tls_config(BASE_DOMAIN) {
+        debug_log!(
+            LogLevel::Ok,
+            "ECH resolved! Proceeding with custom TLS backend..."
+        );
+        builder = builder.tls_backend_preconfigured(cfg);
+    } else {
+        debug_log!(
+            LogLevel::Warn,
+            "Failed to resolve ECH! Proceeding with bare configuration..."
+        );
+    }
+
     Ok(builder.build()?)
 }
 
