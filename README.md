@@ -2,7 +2,8 @@
 
 Printer swarm-worker daemon implementation for [PreConnect](https://github.com/sabbirba/preconnect).
 
-[(Codeberg Mirror)](https://codeberg.org/hitblast/preprintd)
+> [!NOTE]
+> Development happens on the [Codeberg repository](https://codeberg.org/hitblast/preprintd), and the [GitHub repository](https://github.com/hitblast/preprintd) is only for receiving pull requests and pushing prebuilt binaries along with the releases.
 
 ### Overview
 
