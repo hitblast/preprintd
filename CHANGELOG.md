@@ -2,6 +2,11 @@
 
 Active since `v0.1.0`.
 
+### v0.7.1
+
+- Removed dynamic dispatch and `serde_json::Value` usage from the project (now I hate calling it a "codebase"), opting for statically-typed serialization and deserialization.
+- Minor code readability improvements.
+
 ### v0.7.0
 
 - The preconfigured TLS backend with ECH is now optional (if unable to be resolved).

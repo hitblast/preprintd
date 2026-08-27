@@ -1,4 +1,8 @@
-use serde::Deserialize;
+//! Note that this file might not contain *all* the types in the entire codebase.
+//! This module is focused more on the custom types used in main.rs itself. Other modules may
+//! self-contain their own types.
+//!
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -19,4 +23,13 @@ pub enum LogLevel {
     Ok,
     Warn,
     Error,
+}
+
+#[derive(Serialize)]
+pub struct ClaimJobRequestBody<'a> {
+    pub id: &'a str,
+}
+#[derive(Deserialize)]
+pub struct ClaimJobResponseBody {
+    pub claimed: Option<bool>,
 }
