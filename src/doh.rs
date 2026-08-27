@@ -75,7 +75,7 @@ pub fn ready_tls_config(domain: &str) -> Result<ClientConfig> {
     let Some(answers) = dns.answer else {
         bail!("missing HTTPS record answers!");
     };
-    let ech_b64: &str = &answers[0]
+    let ech_b64: &str = answers[0]
         .data
         .split_whitespace()
         .find_map(|x| x.strip_prefix("ech="))
