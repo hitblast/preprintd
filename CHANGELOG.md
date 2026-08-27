@@ -2,6 +2,10 @@
 
 Active since `v0.1.0`.
 
+### v0.7.0
+
+- The preconfigured TLS backend with ECH is now optional (if unable to be resolved).
+
 ### v0.6.5
 
 - Removed the JWT authorization header from the request flow.
