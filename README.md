@@ -94,8 +94,9 @@ Some things you might come across while navigating this project are noted down b
 - The standard LPR/LPD sequence is present for sending requests to the LPR server. Note that the connections are **one-time**, meaning that once a job has been dispatched successfully, the socket connection is dropped. It is recreated once another job has been received.
 - Lots of `LazyLock` usage is present. Although this is not optimal for a program that's supposed to be tiny, this pattern has been used to reuse as much data as physically possible to (slightly) prevent hardcoding and messing things up.
 - The HTTP requests are made using a `reqwest::blocking::Client` instance, and in general there is zero async I/O inside the codebase. Some tasks are just offloaded to separate threads (i.e. decoupling a `Job` using `handle()`).
-- The `client` module provides a `ready_tls_config()` function which creates a custom TLS backend configuration for the `reqwest::blocking::Client` instance to enable TLS 1.3 and [ECH (Encrypted Client Hello)](https://blog.cloudflare.com/announcing-encrypted-client-hello/) support.
-- The client module also provides a custom DNS resolver implementation (which uses [DoH (DNS over HTTPS)](https://developers.cloudflare.com/1.1.1.1/encryption/dns-over-https/) under the hood), which is used for long-haul connections to the PreConnect API SSE.
+- The `client` module provides:
+  - a `ready_tls_config()` function which creates a custom TLS backend configuration for the `reqwest::blocking::Client` instance to enable TLS 1.3 and [ECH (Encrypted Client Hello)](https://blog.cloudflare.com/announcing-encrypted-client-hello/) support.
+  - a custom DNS resolver implementation via the `DohResolver` struct (which uses [DoH (DNS over HTTPS)](https://developers.cloudflare.com/1.1.1.1/encryption/dns-over-https/) under the hood and implements `reqwest::dns::Resolve`), which is used for long-haul connections to the PreConnect API SSE.
 
 More specific parts of the codebase that you may be more curious about are described below:
 
