@@ -48,12 +48,12 @@ use reqwest::{
     StatusCode,
     header::{HeaderMap, HeaderValue},
 };
-use serde_json::{Value, json};
 use socket2::SockRef;
 use tcp_extras::TcpExtras;
 
 use crate::ident::decide_ident;
 
+use crate::types::{ClaimJobRequestBody, ClaimJobResponseBody};
 #[cfg(target_os = "linux")]
 use crate::zbus::acquire_sleep_inhibitor;
 
@@ -138,11 +138,11 @@ fn hdrs() -> Result<HeaderMap> {
 }
 
 fn claim_job(id: &str) -> Result<bool> {
-    let body: Value = json!({ "id": id });
+    let body = ClaimJobRequestBody { id };
 
     let resp = client()?
         .post(format!("{BASE_URL}/print/claim"))
-        .body(body.to_string())
+        .body(serde_json::to_string(&body)?)
         .header("Content-Type", "application/json")
         .headers(hdrs()?)
         .timeout(Duration::from_secs(10))
@@ -158,15 +158,11 @@ fn claim_job(id: &str) -> Result<bool> {
                 return Ok(false);
             }
 
-            let Ok(value) = r.json::<Value>() else {
+            let Ok(value) = r.json::<ClaimJobResponseBody>() else {
                 debug_log!(LogLevel::Warn, "Parsing failed, so skipping on this job...");
                 return Ok(false);
             };
-
-            value
-                .get("claimed")
-                .and_then(Value::as_bool)
-                .unwrap_or(false)
+            value.claimed.unwrap_or(false)
         }
         Err(e) => {
             debug_log!(LogLevel::Error, "(Send) /print/claim: {e}");

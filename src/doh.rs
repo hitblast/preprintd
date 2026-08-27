@@ -9,6 +9,8 @@ use rustls::client::{ClientConfig, EchConfig, EchMode};
 use rustls::crypto::aws_lc_rs;
 use rustls_platform_verifier::BuilderVerifierExt;
 
+const QUERY_URL: &str = "https://1.1.1.1/dns-query";
+
 #[derive(Debug, serde::Deserialize)]
 struct DohResponse {
     #[serde(rename = "Answer")]
@@ -43,7 +45,7 @@ impl Resolve for DohResolver {
 
         let result: Result<Addrs, Box<dyn std::error::Error + Send + Sync>> = (|| {
             let dns: DohResponse = DOH_CLIENT
-                .get(format!("https://1.1.1.1/dns-query?name={host}&type=A"))
+                .get(format!("{QUERY_URL}?name={host}&type=A"))
                 .header("Accept", "application/dns-json")
                 .send()?
                 .json()?;
@@ -65,9 +67,7 @@ impl Resolve for DohResolver {
 
 pub fn ready_tls_config(domain: &str) -> Result<ClientConfig> {
     let dns: DohResponse = DOH_CLIENT
-        .get(format!(
-            "https://1.1.1.1/dns-query?name={domain}&type=HTTPS"
-        ))
+        .get(format!("{QUERY_URL}?name={domain}&type=HTTPS"))
         .header("Accept", "application/dns-json")
         .send()?
         .json()?;
