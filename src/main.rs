@@ -1,4 +1,3 @@
-use std::fs;
 /*
  * preprintd - Printer swarm listener/worker implementation for PreConnect.
  * Copyright (C) 2026  Anindya Shiddhartha & contributors
@@ -17,6 +16,7 @@ use std::fs;
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
+use std::fs;
 use std::path::PathBuf;
 use std::sync::LazyLock;
 use std::{
