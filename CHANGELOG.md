@@ -2,6 +2,11 @@
 
 Active since `v0.1.0`.
 
+### v0.7.2
+
+- `ALIAS` now defaults to the `CARGO_PKG_NAME` environment variable specified during compile-time.
+- Minor code readability improvements, *again*.
+
 ### v0.7.1
 
 - Removed dynamic dispatch and `serde_json::Value` usage from the project (now I hate calling it a "codebase"), opting for statically-typed serialization and deserialization.
