@@ -5,6 +5,7 @@ Active since `v0.1.0`.
 ### v0.7.2
 
 - `ALIAS` now defaults to the `CARGO_PKG_NAME` environment variable specified during compile-time.
+- Fix a potential missing-index bug in `crate::doh::ready_tls_config`.
 - Added a proper DoH cache with expiry, minimum-TTL handing, and some other nitty-gritty features.
 - Minor code readability improvements, _again_.
 

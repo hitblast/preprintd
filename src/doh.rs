@@ -133,16 +133,20 @@ pub fn ready_tls_config(domain: &str) -> Result<ClientConfig> {
     let Some(answers) = dns.answer else {
         bail!("missing HTTPS record answers!");
     };
-    let ech_b64: &str = answers[0]
+
+    let answer = answers
+        .iter()
+        .find(|answer| answer.record_type == 65)
+        .ok_or_else(|| anyhow::anyhow!("missing HTTPS record"))?;
+
+    let ech_b64 = answer
         .data
         .split_whitespace()
         .find_map(|x| x.strip_prefix("ech="))
         .ok_or_else(|| anyhow::anyhow!("missing ECH config"))?;
 
-    let ech_bytes: Vec<u8> = STANDARD.decode(ech_b64)?;
-
     let ech: EchConfig = EchConfig::new(
-        ech_bytes.as_slice().into(),
+        STANDARD.decode(ech_b64)?.as_slice().into(),
         &[rustls::crypto::aws_lc_rs::hpke::DH_KEM_X25519_HKDF_SHA256_AES_128],
     )?;
 
