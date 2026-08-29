@@ -52,7 +52,10 @@ impl Resolve for DohResolver {
         let host = name.as_str().to_owned();
 
         let cached = {
-            let mut cache = DOH_CACHE.lock().expect("DOH cache lock poisoned");
+            #[allow(clippy::expect_used)]
+            let mut cache = DOH_CACHE
+                .lock()
+                .expect("DOH pre-resolve cache lock poisoned");
 
             let expired = cache.get(&host).is_some_and(|f| {
                 Instant::now().saturating_duration_since(f.stored_at)
@@ -101,7 +104,10 @@ impl Resolve for DohResolver {
         if !addrs.is_empty()
             && let Some(min_ttl) = min_ttl
         {
-            let mut cache = DOH_CACHE.lock().expect("DOH cache lock poisoned");
+            #[allow(clippy::expect_used)]
+            let mut cache = DOH_CACHE
+                .lock()
+                .expect("DOH post-resolve cache lock poisoned");
 
             cache.insert(
                 host,

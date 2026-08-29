@@ -2,6 +2,10 @@
 
 Active since `v0.1.0`.
 
+### v0.7.2
+
+- Fix: nothing much, just some `clippy` errors.
+
 ### v0.7.1
 
 - `ALIAS` now defaults to the `CARGO_PKG_NAME` environment variable specified during compile-time.

@@ -336,7 +336,10 @@ fn stream() -> Result<()> {
                     debug_log!(LogLevel::Ok, "Data match for new job!");
 
                     if let Err(e) = std::thread::Builder::new().spawn(move || {
-                        let _guard = PRINT_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+                        let _guard = PRINT_LOCK
+                            .lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner());
+
                         if let Err(panic) =
                             std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                                 let _ = handle(value);
