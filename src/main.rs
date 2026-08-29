@@ -1,5 +1,5 @@
 /*
- * preprintd - Printer swarm listener/worker implementation for PreConnect.
+ * preprintd: Printer swarm listener/worker implementation for PreConnect.
  * Copyright (C) 2026  Anindya Shiddhartha & contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -51,7 +51,7 @@ use reqwest::{
 use socket2::SockRef;
 use tcp_extras::TcpExtras;
 
-use crate::ident::decide_ident;
+use crate::ident::init_ident_and_file;
 
 use crate::types::{ClaimJobRequestBody, ClaimJobResponseBody};
 #[cfg(target_os = "linux")]
@@ -89,7 +89,7 @@ static STATE_DIR: LazyLock<Option<PathBuf>> = LazyLock::new(|| {
 });
 
 pub static WORKER_IDENT: LazyLock<String> =
-    LazyLock::new(|| decide_ident(STATE_DIR.map(|f| f.join(".ident"))));
+    LazyLock::new(|| init_ident_and_file(STATE_DIR.as_deref()));
 
 static ALIAS: LazyLock<String> =
     LazyLock::new(|| env::var("ALIAS").unwrap_or(env!("CARGO_PKG_NAME").to_string()));

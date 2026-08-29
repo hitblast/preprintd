@@ -5,7 +5,8 @@ Active since `v0.1.0`.
 ### v0.7.2
 
 - `ALIAS` now defaults to the `CARGO_PKG_NAME` environment variable specified during compile-time.
-- Minor code readability improvements, *again*.
+- Added a proper DoH cache with expiry, minimum-TTL handing, and some other nitty-gritty features.
+- Minor code readability improvements, _again_.
 
 ### v0.7.1
 
