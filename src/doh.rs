@@ -1,5 +1,7 @@
+use std::collections::HashMap;
 use std::net::{IpAddr, SocketAddr};
-use std::sync::{Arc, LazyLock};
+use std::sync::{Arc, LazyLock, Mutex};
+use std::time::{Duration, Instant};
 
 use anyhow::{Result, bail};
 use base64::{Engine, engine::general_purpose::STANDARD};
@@ -21,6 +23,8 @@ struct DohResponse {
 struct DohAnswer {
     #[serde(rename = "type")]
     record_type: u16,
+    #[serde(rename = "TTL")]
+    ttl: u64,
     data: String,
 }
 
@@ -39,29 +43,83 @@ impl DohResolver {
     }
 }
 
+#[derive(PartialEq)]
+struct DohCacheObject {
+    stored_at: std::time::Instant,
+    addrs: Vec<SocketAddr>,
+    min_ttl: u64,
+}
+
+static DOH_CACHE: LazyLock<Mutex<HashMap<String, DohCacheObject>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
 impl Resolve for DohResolver {
     fn resolve(&self, name: reqwest::dns::Name) -> Resolving {
         let host = name.as_str().to_owned();
 
-        let result: Result<Addrs, Box<dyn std::error::Error + Send + Sync>> = (|| {
-            let dns: DohResponse = DOH_CLIENT
-                .get(format!("{QUERY_URL}?name={host}&type=A"))
-                .header("Accept", "application/dns-json")
-                .send()?
-                .json()?;
+        let cached = {
+            let mut cache = DOH_CACHE.lock().expect("DOH cache lock poisoned");
 
-            let addrs: Vec<SocketAddr> = dns
-                .answer
-                .unwrap_or_default()
-                .into_iter()
-                .filter(|record| record.record_type == 1)
-                .filter_map(|record| record.data.parse::<IpAddr>().ok().map(|ip| (ip, 0).into()))
-                .collect();
+            let expired = cache.get(&host).is_some_and(|f| {
+                Instant::now().saturating_duration_since(f.stored_at)
+                    <= Duration::from_secs(f.min_ttl)
+            });
 
-            Ok(Box::new(addrs.into_iter()) as Addrs)
-        })();
+            if expired {
+                cache.remove(&host);
+                None
+            } else {
+                cache.get(&host).map(|f| f.addrs.clone())
+            }
+        };
 
-        Box::pin(async move { result })
+        if let Some(addrs) = cached {
+            return Box::pin(async move { Ok(Box::new(addrs.into_iter()) as Addrs) });
+        }
+
+        let dns: DohResponse = match DOH_CLIENT
+            .get(format!("{QUERY_URL}?name={host}&type=A"))
+            .header("Accept", "application/dns-json")
+            .send()
+        {
+            Ok(response) => match response.json() {
+                Ok(dns) => dns,
+                Err(e) => return Box::pin(async move { Err(Box::new(e) as _) }),
+            },
+            Err(e) => return Box::pin(async move { Err(Box::new(e) as _) }),
+        };
+
+        let min_ttl = dns.answer.as_ref().and_then(|f| {
+            f.iter()
+                .filter(|f| f.record_type == 1)
+                .map(|answer| answer.ttl)
+                .min()
+        });
+
+        let addrs: Vec<SocketAddr> = dns
+            .answer
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|record| record.record_type == 1)
+            .filter_map(|record| record.data.parse::<IpAddr>().ok().map(|ip| (ip, 0).into()))
+            .collect();
+
+        if !addrs.is_empty()
+            && let Some(min_ttl) = min_ttl
+        {
+            let mut cache = DOH_CACHE.lock().expect("DOH cache lock poisoned");
+
+            cache.insert(
+                host,
+                DohCacheObject {
+                    stored_at: Instant::now(),
+                    addrs: addrs.clone(),
+                    min_ttl,
+                },
+            );
+        }
+
+        Box::pin(async move { Ok(Box::new(addrs.into_iter()) as Addrs) })
     }
 }
 

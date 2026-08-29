@@ -1,19 +1,21 @@
-use std::fs;
-use std::path::Path;
+use std::{fs, path::Path};
 use uuid::Uuid;
 
 use crate::types::LogLevel;
 
-/// Decides the identity for the given
-pub fn decide_ident(ident_fp: Option<PathBuf>) -> String {
-    let Some(ident_fp) = ident_fp else {
+/// Decides the identity for the current session and creates an identity file, and stores the initialized
+/// identity for future sessions.
+pub fn init_ident_and_file(state_dir: Option<&Path>) -> String {
+    let fallback = || create_new_ident(false);
+    let Some(state_dir) = state_dir else {
         debug_log!(
             LogLevel::Warn,
             "State directory indeterminate; using dyn ident..."
         );
-        return create_new_ident(false);
+        return fallback();
     };
 
+    let ident_fp = state_dir.join(".ident");
     if !ident_fp.try_exists().unwrap_or(false) {
         let i = create_new_ident(true);
         if let Err(e) = fs::write(&ident_fp, &i) {
@@ -21,7 +23,7 @@ pub fn decide_ident(ident_fp: Option<PathBuf>) -> String {
                 LogLevel::Error,
                 ".ident write failure: {e}; using dyn ident..."
             );
-            create_new_ident(false)
+            fallback()
         } else {
             debug_log!(LogLevel::Ok, "Generated new static identity: {i}");
             i
@@ -35,7 +37,7 @@ pub fn decide_ident(ident_fp: Option<PathBuf>) -> String {
                 LogLevel::Error,
                 "Failed to read previously generated ident, using dyn ident."
             );
-            create_new_ident(false)
+            fallback()
         }
     }
 }
