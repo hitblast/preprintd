@@ -107,6 +107,7 @@ static BASE_URL: LazyLock<Url> = LazyLock::new(|| {
     Url::parse(&env::var("BASE_URL").expect("missing BASE_URL env var"))
         .expect("invalid BASE_URL passed")
 });
+#[allow(clippy::expect_used)]
 static BASE_DOMAIN: LazyLock<&str> = LazyLock::new(|| {
     BASE_URL
         .domain()
