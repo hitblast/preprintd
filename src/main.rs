@@ -88,10 +88,11 @@ static STATE_DIR: LazyLock<Option<PathBuf>> = LazyLock::new(|| {
     Some(p)
 });
 
-pub static WORKER_IDENT: LazyLock<String> = LazyLock::new(|| decide_ident(STATE_DIR.as_deref()));
+pub static WORKER_IDENT: LazyLock<String> =
+    LazyLock::new(|| decide_ident(STATE_DIR.map(|f| f.join(".ident"))));
 
 static ALIAS: LazyLock<String> =
-    LazyLock::new(|| env::var("ALIAS").unwrap_or("preprintd".to_string()));
+    LazyLock::new(|| env::var("ALIAS").unwrap_or(env!("CARGO_PKG_NAME").to_string()));
 #[allow(clippy::expect_used)]
 static WORKER_KEY: LazyLock<String> =
     LazyLock::new(|| env::var("WORKER_KEY").expect("missing WORKER_KEY env var"));

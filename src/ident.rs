@@ -4,8 +4,9 @@ use uuid::Uuid;
 
 use crate::types::LogLevel;
 
-pub fn decide_ident(p: Option<&Path>) -> String {
-    let Some(p) = p else {
+/// Decides the identity for the given
+pub fn decide_ident(ident_fp: Option<PathBuf>) -> String {
+    let Some(ident_fp) = ident_fp else {
         debug_log!(
             LogLevel::Warn,
             "State directory indeterminate; using dyn ident..."
@@ -13,10 +14,9 @@ pub fn decide_ident(p: Option<&Path>) -> String {
         return create_new_ident(false);
     };
 
-    let p: std::path::PathBuf = p.join(".ident");
-    if !p.try_exists().unwrap_or(false) {
+    if !ident_fp.try_exists().unwrap_or(false) {
         let i = create_new_ident(true);
-        if let Err(e) = fs::write(&p, &i) {
+        if let Err(e) = fs::write(&ident_fp, &i) {
             debug_log!(
                 LogLevel::Error,
                 ".ident write failure: {e}; using dyn ident..."
@@ -27,7 +27,7 @@ pub fn decide_ident(p: Option<&Path>) -> String {
             i
         }
     } else {
-        if let Ok(d) = fs::read_to_string(&p) {
+        if let Ok(d) = fs::read_to_string(&ident_fp) {
             debug_log!(LogLevel::Ok, "Using ident from previous session: {d}");
             d
         } else {
@@ -40,6 +40,7 @@ pub fn decide_ident(p: Option<&Path>) -> String {
     }
 }
 
+/// Creates a new identity for the current-running instance.
 fn create_new_ident(st: bool) -> String {
     let mut ident = Uuid::new_v4().to_string();
     ident.push(';');
