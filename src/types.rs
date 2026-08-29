@@ -4,7 +4,7 @@
 //!
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Job {
     pub id: Option<String>,

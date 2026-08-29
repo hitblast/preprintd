@@ -10,16 +10,17 @@ use reqwest::dns::{Addrs, Resolve, Resolving};
 use rustls::client::{ClientConfig, EchConfig, EchMode};
 use rustls::crypto::aws_lc_rs;
 use rustls_platform_verifier::BuilderVerifierExt;
+use serde::Deserialize;
 
 const QUERY_URL: &str = "https://1.1.1.1/dns-query";
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Deserialize)]
 struct DohResponse {
     #[serde(rename = "Answer")]
     answer: Option<Vec<DohAnswer>>,
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Deserialize)]
 struct DohAnswer {
     #[serde(rename = "type")]
     record_type: u16,

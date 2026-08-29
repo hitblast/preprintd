@@ -5,7 +5,7 @@ use sha2::{Digest, Sha256};
 
 use crate::WORKER_KEY;
 
-pub fn decrypt(opt: Option<&str>, job_id: &str) -> Result<Vec<u8>> {
+pub fn decrypt(opt: Option<&str>, extra: &str) -> Result<Vec<u8>> {
     let Some(value) = opt.map(str::trim).filter(|value| !value.is_empty()) else {
         return Ok(Vec::new());
     };
@@ -21,7 +21,7 @@ pub fn decrypt(opt: Option<&str>, job_id: &str) -> Result<Vec<u8>> {
     let mut seed = Sha256::new();
     seed.update(WORKER_KEY.as_bytes());
     seed.update(iv);
-    seed.update(job_id.as_bytes());
+    seed.update(extra.as_bytes());
     let p = seed.finalize();
 
     let mut output: Vec<u8> = Vec::with_capacity(encrypted.len());

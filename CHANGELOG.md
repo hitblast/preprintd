@@ -5,6 +5,7 @@ Active since `v0.1.0`.
 ### v0.7.2
 
 - Fix: nothing much, just some `clippy` errors.
+- Reduced `derive` macro implementations in some structs.
 
 ### v0.7.1
 
