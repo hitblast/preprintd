@@ -37,12 +37,6 @@ static DOH_CLIENT: LazyLock<Client> = LazyLock::new(|| {
 
 pub struct DohResolver;
 
-impl DohResolver {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
 #[derive(PartialEq)]
 struct DohCacheObject {
     stored_at: std::time::Instant,

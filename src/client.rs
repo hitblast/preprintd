@@ -14,7 +14,7 @@ static CLIENT: LazyLock<Mutex<(Option<Client>, Instant)>> =
     LazyLock::new(|| Mutex::new((None, Instant::now())));
 
 fn build_client() -> anyhow::Result<Client> {
-    let resolver = Arc::new(DohResolver::new());
+    let resolver = Arc::new(DohResolver);
     let mut builder: reqwest::blocking::ClientBuilder = Client::builder()
         .dns_resolver(resolver)
         .tcp_nodelay(true)
