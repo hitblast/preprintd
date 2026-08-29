@@ -7,6 +7,9 @@ Active since `v0.1.0`.
 - Fix: nothing much, just some `clippy` errors.
 - Reduced `derive` macro implementations in some structs.
 - Added a new `BASE_URL` environment variable, which takes in the primary API URL the worker is going to use.
+- Unmerged the large `sock!()` macro into a more concise `crate::socket::create_lpr_sock` method (in a new `crate::socket` module).
+- LPR connectivity timeout for the `crate::is_online` function has been set to 1 second (from 800 milliseconds).
+- Added a new `consts` module (to be improved later).
 
 ### v0.7.1
 

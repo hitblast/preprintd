@@ -22,7 +22,6 @@ use std::sync::LazyLock;
 use std::{
     env,
     io::{BufRead, BufReader},
-    net::{TcpStream, ToSocketAddrs},
     sync::{
         Mutex,
         atomic::{AtomicUsize, Ordering},
@@ -35,9 +34,11 @@ use std::{
 mod macros;
 
 mod client;
+pub mod consts;
 mod crypto;
 mod doh;
 mod ident;
+mod socket;
 mod tcp_extras;
 mod types;
 mod zbus;
@@ -51,15 +52,15 @@ use reqwest::{
 use socket2::SockRef;
 use tcp_extras::TcpExtras;
 
-use crate::ident::init_ident_and_file;
-
-use crate::types::{ClaimJobRequestBody, ClaimJobResponseBody};
 #[cfg(target_os = "linux")]
 use crate::zbus::acquire_sleep_inhibitor;
-
 use crate::{
     client::client,
+    consts::DEF_LPR_PORT,
     crypto::decrypt,
+    ident::init_ident_and_file,
+    socket::create_lpr_sock,
+    types::{ClaimJobRequestBody, ClaimJobResponseBody},
     types::{Job, LogLevel},
 };
 
@@ -118,14 +119,13 @@ static PRINT_LOCK: Mutex<()> = Mutex::new(());
 static JOBS_COMPLETED: AtomicUsize = AtomicUsize::new(0);
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-const DEF_LPR_PORT: u16 = 515;
 const NUL: [u8; 1] = [0u8];
 
 fn is_online(host: &str) -> Result<bool> {
     if host.is_empty() {
         return Ok(false);
     }
-    sock!(s, host, DEF_LPR_PORT, Duration::from_millis(800));
+    let s = create_lpr_sock(host, Duration::from_secs(1));
 
     if let Ok(conn) = s {
         let _ = conn.shutdown(std::net::Shutdown::Both);
@@ -239,8 +239,7 @@ fn handle(job: Job) -> Result<()> {
             .unwrap_or(60.0),
     );
 
-    sock!(s, host, DEF_LPR_PORT, timeout);
-    let mut socket = match s {
+    let mut socket = match create_lpr_sock(host, timeout) {
         Ok(s) => s,
         Err(e) => {
             debug_log!(
