@@ -6,6 +6,7 @@ Active since `v0.1.0`.
 
 - Fix: nothing much, just some `clippy` errors.
 - Reduced `derive` macro implementations in some structs.
+- Added a new `BASE_URL` environment variable, which takes in the primary API URL the worker is going to use.
 
 ### v0.7.1
 

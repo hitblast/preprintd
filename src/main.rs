@@ -35,7 +35,6 @@ use std::{
 mod macros;
 
 mod client;
-mod consts;
 mod crypto;
 mod doh;
 mod ident;
@@ -44,6 +43,7 @@ mod types;
 mod zbus;
 
 use anyhow::Result;
+use reqwest::Url;
 use reqwest::{
     StatusCode,
     header::{HeaderMap, HeaderValue},
@@ -59,7 +59,6 @@ use crate::zbus::acquire_sleep_inhibitor;
 
 use crate::{
     client::client,
-    consts::BASE_URL,
     crypto::decrypt,
     types::{Job, LogLevel},
 };
@@ -103,6 +102,16 @@ static DEF_HOST: LazyLock<String> =
 #[allow(clippy::expect_used)]
 static DEF_QUEUE: LazyLock<String> =
     LazyLock::new(|| env::var("DEF_QUEUE").expect("missing DEF_QUEUE env var"));
+#[allow(clippy::expect_used)]
+static BASE_URL: LazyLock<Url> = LazyLock::new(|| {
+    Url::parse(&env::var("BASE_URL").expect("missing BASE_URL env var"))
+        .expect("invalid BASE_URL passed")
+});
+static BASE_DOMAIN: LazyLock<&str> = LazyLock::new(|| {
+    BASE_URL
+        .domain()
+        .expect("invalid BASE_URL passed; unextractable domain")
+});
 
 static PRINT_LOCK: Mutex<()> = Mutex::new(());
 static JOBS_COMPLETED: AtomicUsize = AtomicUsize::new(0);
@@ -142,7 +151,7 @@ fn claim_job(id: &str) -> Result<bool> {
     let body = ClaimJobRequestBody { id };
 
     let resp = client()?
-        .post(format!("{BASE_URL}/print/claim"))
+        .post(format!("{}/print/claim", BASE_URL.as_str()))
         .body(serde_json::to_string(&body)?)
         .header("Content-Type", "application/json")
         .headers(hdrs()?)
@@ -286,7 +295,7 @@ fn handle(job: Job) -> Result<()> {
 
 fn stream() -> Result<()> {
     let resp = match client()?
-        .get(format!("{BASE_URL}/printer"))
+        .get(format!("{}/printer", BASE_URL.as_str()))
         .header("Accept", "text/event-stream")
         .headers(hdrs()?)
         .send()

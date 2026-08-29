@@ -43,10 +43,13 @@ sudo touch /etc/systemd/system/preprintd.service
 # touch ~/.config/systemd/user/preprintd.service
 ```
 
-Write [this INI configuration](./preprintd.service) in your `preprintd.service` file. Make sure to replace the following fields/values:
+Then, write [this INI configuration](./preprintd.service) in your `preprintd.service` file.
+
+Make sure to replace the following fields/values:
 
 1. Under `Environment=`:
 
+- `BASE_URL`: The primary API URL that the worker is going to communicate with.
 - `WORKER_KEY`: Your worker key credential (from the PreConnect API).
 - `DEF_HOST`: The default printer host to use in case the API cannot provide one.
 - `DEF_QUEUE`: The default queue name to send printable data to.
