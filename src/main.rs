@@ -56,7 +56,7 @@ use tcp_extras::TcpExtras;
 use crate::zbus::acquire_sleep_inhibitor;
 use crate::{
     client::client,
-    consts::DEF_LPR_PORT,
+    consts::{DEF_LPR_PORT, NUL, VERSION},
     crypto::decrypt,
     ident::init_ident_and_file,
     socket::create_lpr_sock,
@@ -117,9 +117,6 @@ static BASE_DOMAIN: LazyLock<&str> = LazyLock::new(|| {
 
 static PRINT_LOCK: Mutex<()> = Mutex::new(());
 static JOBS_COMPLETED: AtomicUsize = AtomicUsize::new(0);
-
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-const NUL: [u8; 1] = [0u8];
 
 fn is_online(host: &str) -> Result<bool> {
     if host.is_empty() {
