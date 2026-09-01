@@ -39,10 +39,10 @@ pub fn create_lpr_sock(host: impl ToString, timeout: Duration) -> std::io::Resul
         }
     }
 
-    return Err(last_error.unwrap_or_else(|| {
+    Err(last_error.unwrap_or_else(|| {
         std::io::Error::new(
             std::io::ErrorKind::AddrNotAvailable,
             "no socket addresses resolved",
         )
-    }));
+    }))
 }
