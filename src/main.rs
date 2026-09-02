@@ -60,8 +60,7 @@ use crate::{
     crypto::decrypt,
     ident::init_ident_and_file,
     socket::create_lpr_sock,
-    types::{ClaimJobRequestBody, ClaimJobResponseBody},
-    types::{Job, LogLevel},
+    types::{ClaimJobRequestBody, ClaimJobResponseBody, Job, LogLevel},
 };
 
 static DEBUG: LazyLock<bool> = LazyLock::new(|| env::args().any(|arg| arg == "--debug"));
@@ -294,6 +293,67 @@ fn handle(job: Job) -> Result<()> {
 }
 
 fn stream() -> Result<()> {
+    let mut ws_url = BASE_URL.clone();
+    let _ = ws_url.set_scheme(if BASE_URL.scheme() == "https" {
+        "wss"
+    } else {
+        "ws"
+    });
+    ws_url.set_path("printer/ws");
+
+    let host = ws_url.host_str().unwrap_or_default();
+
+    let req = tungstenite::http::Request::builder()
+        .uri(ws_url.as_str())
+        .header("x-worker-key", WORKER_KEY.as_str())
+        .header("x-worker-ident", WORKER_IDENT.as_str())
+        .header("user-agent", AGENT.as_str())
+        .header("Host", host)
+        .header("Connection", "Upgrade")
+        .header("Upgrade", "websocket")
+        .header("Sec-WebSocket-Version", "13")
+        .header(
+            "Sec-WebSocket-Key",
+            tungstenite::handshake::client::generate_key(),
+        )
+        .body(())?;
+
+    if let Ok((mut socket, _)) = tungstenite::connect(req) {
+        loop {
+            let msg = socket.read()?;
+            match msg {
+                tungstenite::Message::Text(text) => {
+                    if let Ok(value) = serde_json::from_str::<Job>(&text) {
+                        debug_log!(LogLevel::Ok, "Data match for new job!");
+
+                        if let Err(e) = std::thread::Builder::new().spawn(move || {
+                            let _guard = PRINT_LOCK
+                                .lock()
+                                .unwrap_or_else(|poisoned| poisoned.into_inner());
+
+                            if let Err(panic) =
+                                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                                    let _ = handle(value);
+                                }))
+                            {
+                                debug_log!(LogLevel::Error, "Job handler panicked: {:?}", panic);
+                            }
+                        }) {
+                            debug_log!(LogLevel::Error, "Failed to spawn print thread: {e}");
+                        }
+                    }
+                }
+                tungstenite::Message::Ping(data) => {
+                    let _ = socket.send(tungstenite::Message::Pong(data));
+                }
+                tungstenite::Message::Close(_) => break,
+                _ => {}
+            }
+        }
+
+        return Ok(());
+    }
+
     let resp = match client()?
         .get(format!("{}/printer", BASE_URL.as_str()))
         .header("Accept", "text/event-stream")
