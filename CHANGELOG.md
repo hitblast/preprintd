@@ -2,7 +2,7 @@
 
 Active since `v0.1.0`.
 
-### v0.7.2
+### v0.8.0
 
 - Reduced `derive` macro implementations in some structs.
 - Added a new `BASE_URL` environment variable, which takes in the primary API URL that the worker is going to use. This is optional and, internally, the worker defaults to `crate::consts::DEF_API_URL` if the `BASE_URL` environment variable is not provided during runtime.
