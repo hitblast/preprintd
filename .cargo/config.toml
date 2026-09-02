@@ -1,2 +1,3 @@
 [alias]
 test-prod = "zigbuild --target aarch64-unknown-linux-gnu"
+release-prod = "zigbuild --release --target aarch64-unknown-linux-gnu"

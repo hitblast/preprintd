@@ -23,9 +23,10 @@ If you are on any operating system other than Linux, you can use [cargo-zigbuild
 
 ```bash
 cargo test-prod
+# cargo zigbuild --target aarch64-unknown-linux-gnu
 
-# this is an alias
-# it's the same as typing: cargo zigbuild --target aarch64-unknown-linux-gnu
+cargo release-prod
+# cargo zigbuild --release --target aarch64-unknown-linux-gnu
 ```
 
 You can also directly install the `preprintd` binary globally using [cargo](https://github.com/rust-lang/cargo):
