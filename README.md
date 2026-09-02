@@ -132,6 +132,9 @@ Visible from the pattern, the identity has two parts:
 
 #### Worker Health-Check
 
+> [!WARNING]
+> Unimplemented. I'm still brainstorming this.
+
 Every worker can occasionally become prone to errors due to software glitches, hence another header, namely `X-Worker-Health`, is passed in with all the requests that the worker makes.
 
 ### Reference Implementation
