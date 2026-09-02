@@ -143,10 +143,7 @@ fn hdrs() -> Result<HeaderMap> {
     map.insert("User-Agent", HeaderValue::from_str(&AGENT)?);
     map.insert("X-Worker-Key", HeaderValue::from_str(&WORKER_KEY)?);
     map.insert("X-Worker-Jobs", HeaderValue::from_str(&jobs)?);
-    map.insert(
-        "X-Worker-Integrity",
-        HeaderValue::from_str("unimplemented")?,
-    );
+    map.insert("X-Worker-Health", HeaderValue::from_str("unimplemented")?);
     map.insert(
         "X-Worker-Ident",
         HeaderValue::from_str(&WORKER_IDENT.to_string())?,
