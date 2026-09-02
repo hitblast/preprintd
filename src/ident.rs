@@ -1,4 +1,4 @@
-use std::{fs, path::Path};
+use std::{env::consts, fs, path::Path};
 use uuid::Uuid;
 
 use crate::types::LogLevel;
@@ -6,7 +6,8 @@ use crate::types::LogLevel;
 /// Decides the identity for the current session and creates an identity file, and stores the initialized
 /// identity for future sessions.
 pub fn init_ident_and_file(state_dir: Option<&Path>) -> String {
-    let fallback = Uuid::new_v4().to_string();
+    let fallback = format!("{};{}", Uuid::new_v4(), consts::ARCH);
+
     let Some(state_dir) = state_dir else {
         debug_log!(
             LogLevel::Warn,
