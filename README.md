@@ -88,7 +88,7 @@ You may pass in the `--inhibit` flag while running `preprintd` to acquire an inh
 The file descriptor is derived from the `org.freedesktop.login1` service. While running the daemon with `--inhibit`, you can test out the functionality by running `systemd-inhibit --list` and checking if `preprintd` pops up anywhere.
 
 > [!NOTE]
-> Using inhibitor locks may not prevent manual suspension/sleep.
+> Using inhibitor locks may NOT prevent manual suspension/sleep.
 
 ### Code Inspection
 
@@ -105,7 +105,7 @@ More specific parts of the codebase that you may be more curious about are descr
 
 #### Windows Inconsistencies
 
-Although most of the instructions above are primarily made for Linux (and can be migrated over to Unix/macOS), some built-in features are not available on the Windows operating system by default. For example, the `STATE_DIRECTORY` environment variable set via `systemd` during runtime never shows up there. Moreover, some Windows-specific features might be missing from this implementation entirely, for which it is encouraged that you give the [Reference Implementation](#reference-implementation) a try.
+Although most of the instructions above are primarily made for Linux (and can be migrated over to Unix/macOS), some built-in features are not available on the Windows operating system by default. For example, the `STATE_DIRECTORY` environment variable set via `systemd` during runtime never shows up there, in which case you have to set it manually while running the program.
 
 #### Identifying Workers
 
@@ -123,6 +123,9 @@ Every worker can occasionally become prone to errors due to software glitches, h
 ### Reference Implementation
 
 See: https://github.com/sabbirba/preconnect/blob/main/printer.py (courtesy: [@sabbirba](https://github.com/sabbirba))
+
+> [!NOTE]
+> This version is primarily made and maintained for the Windows operating system.
 
 ### License
 
