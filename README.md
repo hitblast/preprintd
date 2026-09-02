@@ -38,7 +38,7 @@ cargo install preprintd
 > The release binary is optimized for the smallest-possible size, although you can change this behavior by disabling the optimizations specified in the `[profile.release]` section of [Cargo.toml](./Cargo.toml).
 
 > [!WARNING]
-> The `aarch64-apple-darwin` target is used as the _configured_ development target for this project. If you want to contribute to this project from another platform, please make the appropriate adjustments to the [rust-toolchain.toml](./rust-toolchain.toml). Note that if you're on [Zed](https://zed.dev/), you may also need to modify the LSP configuration in [.zed/settings.json](./.zed/settings.json) file.
+> The `aarch64-apple-darwin` target is used as the _configured_ development target for this project. If you want to contribute to this project from another platform, please make the appropriate adjustments to [./rust-toolchain.toml](./rust-toolchain.toml). Note that if you're on [Zed](https://zed.dev/), you may also need to modify the LSP configuration in [./.zed/settings.json](./.zed/settings.json).
 
 ### Prebuilt Binaries
 
