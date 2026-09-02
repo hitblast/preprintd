@@ -12,6 +12,8 @@ use rustls::crypto::aws_lc_rs;
 use rustls_platform_verifier::BuilderVerifierExt;
 use serde::Deserialize;
 
+use crate::types::LogLevel;
+
 const QUERY_URL: &str = "https://1.1.1.1/dns-query";
 
 #[derive(Deserialize)]
@@ -56,7 +58,7 @@ impl Resolve for DohResolver {
             #[allow(clippy::expect_used)]
             let mut cache = DOH_CACHE
                 .lock()
-                .expect("DOH pre-resolve cache lock poisoned");
+                .expect("DoH pre-resolve cache lock poisoned");
 
             let expired = cache.get(&host).is_some_and(|f| {
                 Instant::now().saturating_duration_since(f.stored_at)
@@ -65,6 +67,7 @@ impl Resolve for DohResolver {
 
             if expired {
                 cache.remove(&host);
+                debug_log!(LogLevel::Ok, "Pruned expired DoH cache for host.");
                 None
             } else {
                 cache.get(&host).map(|f| f.addrs.clone())
@@ -72,6 +75,10 @@ impl Resolve for DohResolver {
         };
 
         if let Some(addrs) = cached {
+            debug_log!(
+                LogLevel::Ok,
+                "Fetched cached DoH data, returning to handler for connecting..."
+            );
             return Box::pin(async move { Ok(Box::new(addrs.into_iter()) as Addrs) });
         }
 
@@ -108,7 +115,7 @@ impl Resolve for DohResolver {
             #[allow(clippy::expect_used)]
             let mut cache = DOH_CACHE
                 .lock()
-                .expect("DOH post-resolve cache lock poisoned");
+                .expect("DoH post-resolve cache lock poisoned");
 
             cache.insert(
                 host,

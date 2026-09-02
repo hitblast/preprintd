@@ -49,11 +49,11 @@ Make sure to replace the following fields/values:
 
 1. Under `Environment=`:
 
-- `BASE_URL`: The primary API URL that the worker is going to communicate with.
+- (Optional) `BASE_URL`: The primary API URL that the worker is going to communicate with.
+- (Optional) `ALIAS`: The name which determines the program's identity on the system and in TCP requests.
 - `WORKER_KEY`: Your worker key credential (from the PreConnect API).
 - `DEF_HOST`: The default printer host to use in case the API cannot provide one.
 - `DEF_QUEUE`: The default queue name to send printable data to.
-- (Optional) `ALIAS`: The name which determines the program's identity on the system and in TCP requests.
 
 2. Replace `/usr/bin/preprintd` with the appropriate path to the daemon binary.
 3. Replace `username` with your appropriate username on the machine. **Note that this step is important if you want to use `--inhibit` later on (see below).**
@@ -109,13 +109,16 @@ Although most of the instructions above are primarily made for Linux (and can be
 
 #### Identifying Workers
 
-While claiming a job, each worker identifies itself with an `X-Worker-Ident` header which has a pattern of `<UUID>;<ARCH>;<IDENTITY_TYPE>` (e.g. `03780793-e7af-49c1-b55d-92ff57be8c6e;aarch64-apple-darwin;st`).
+While claiming a job, each worker identifies itself with an `X-Worker-Ident` header which has a pattern of `<UUID>;<ARCH>` (e.g. `03780793-e7af-49c1-b55d-92ff57be8c6e;aarch64-apple-darwin`).
 
-Visible from the pattern mentioned above, the worker identity can be broken down into three parts:
+Visible from the pattern, the identity has two parts:
 
 - `<UUID>`: A randomly-generated UUID (v4) string literal, which is used to give the worker a unique identity to be correlated with.
 - `<ARCH>`: The architecture of _the compiled binary_ of the worker.
-- `<IDENTITY_TYPE>`: Another string literal representing whether the identity is `st` (static; when it successfully retrieves a previous identity or creates a new one under `$STATE_DIRECTORY/.ident` and _then_ retrieves it), or `dyn` (dynamic; due to issues with `std::fs` operations or just the `$STATE_DIRECTORY` path being unavailable).
+
+#### Worker Health-Check
+
+Every worker can occasionally become prone to errors due to software glitches, hence another header, namely `X-Worker-Health`, is passed in with all the requests that the worker makes.
 
 ### Reference Implementation
 

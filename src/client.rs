@@ -1,12 +1,13 @@
 use crate::{
     BASE_DOMAIN,
+    atomic::IS_ECH_DISABLED,
     doh::{DohResolver, ready_tls_config},
     types::LogLevel,
 };
 use anyhow::Result;
 use reqwest::blocking::Client;
 use std::{
-    sync::{Arc, LazyLock, Mutex},
+    sync::{Arc, LazyLock, Mutex, atomic::Ordering},
     time::{Duration, Instant},
 };
 
@@ -28,6 +29,7 @@ fn build_client() -> anyhow::Result<Client> {
         );
         builder = builder.tls_backend_preconfigured(cfg);
     } else {
+        IS_ECH_DISABLED.store(true, Ordering::Relaxed);
         debug_log!(
             LogLevel::Warn,
             "Failed to resolve ECH! Proceeding with bare configuration..."

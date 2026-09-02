@@ -22,10 +22,7 @@ use std::sync::LazyLock;
 use std::{
     env,
     io::{BufRead, BufReader},
-    sync::{
-        Mutex,
-        atomic::{AtomicUsize, Ordering},
-    },
+    sync::{Mutex, atomic::Ordering},
     thread::sleep,
     time::{Duration, Instant},
 };
@@ -33,6 +30,7 @@ use std::{
 #[macro_use]
 mod macros;
 
+mod atomic;
 mod client;
 pub mod consts;
 mod crypto;
@@ -52,13 +50,15 @@ use reqwest::{
 use socket2::SockRef;
 use tcp_extras::TcpExtras;
 
+use crate::atomic::JOBS_COMPLETED;
+use crate::consts::DEF_API_URL;
+use crate::ident::init_ident_and_file;
 #[cfg(target_os = "linux")]
 use crate::zbus::acquire_sleep_inhibitor;
 use crate::{
     client::client,
     consts::{DEF_LPR_PORT, NUL, VERSION},
     crypto::decrypt,
-    ident::init_ident_and_file,
     socket::create_lpr_sock,
     types::{ClaimJobRequestBody, ClaimJobResponseBody},
     types::{Job, LogLevel},
@@ -91,22 +91,19 @@ static STATE_DIR: LazyLock<Option<PathBuf>> = LazyLock::new(|| {
 pub static WORKER_IDENT: LazyLock<String> =
     LazyLock::new(|| init_ident_and_file(STATE_DIR.as_deref()));
 
-static ALIAS: LazyLock<String> =
-    LazyLock::new(|| env::var("ALIAS").unwrap_or(env!("CARGO_PKG_NAME").to_string()));
 #[allow(clippy::expect_used)]
 static WORKER_KEY: LazyLock<String> =
     LazyLock::new(|| env::var("WORKER_KEY").expect("missing WORKER_KEY env var"));
-static AGENT: LazyLock<String> = LazyLock::new(|| format!("{}/{}", ALIAS.as_str(), VERSION));
-#[allow(clippy::expect_used)]
-static DEF_HOST: LazyLock<String> =
-    LazyLock::new(|| env::var("DEF_HOST").expect("missing DEF_HOST env var"));
-#[allow(clippy::expect_used)]
-static DEF_QUEUE: LazyLock<String> =
-    LazyLock::new(|| env::var("DEF_QUEUE").expect("missing DEF_QUEUE env var"));
 #[allow(clippy::expect_used)]
 static BASE_URL: LazyLock<Url> = LazyLock::new(|| {
-    Url::parse(&env::var("BASE_URL").expect("missing BASE_URL env var"))
-        .expect("invalid BASE_URL passed")
+    Url::parse(&env::var("BASE_URL").unwrap_or({
+        debug_log!(
+            LogLevel::Ok,
+            "No base URL given, switching to default API URL."
+        );
+        DEF_API_URL.to_string()
+    }))
+    .expect("invalid BASE_URL passed")
 });
 #[allow(clippy::expect_used)]
 static BASE_DOMAIN: LazyLock<&str> = LazyLock::new(|| {
@@ -114,9 +111,15 @@ static BASE_DOMAIN: LazyLock<&str> = LazyLock::new(|| {
         .domain()
         .expect("invalid BASE_URL passed; unextractable domain")
 });
-
-static PRINT_LOCK: Mutex<()> = Mutex::new(());
-static JOBS_COMPLETED: AtomicUsize = AtomicUsize::new(0);
+static ALIAS: LazyLock<String> =
+    LazyLock::new(|| env::var("ALIAS").unwrap_or(env!("CARGO_PKG_NAME").to_string()));
+static AGENT: LazyLock<String> = LazyLock::new(|| format!("{}/{}", ALIAS.as_str(), VERSION));
+#[allow(clippy::expect_used)]
+static DEF_HOST: LazyLock<String> =
+    LazyLock::new(|| env::var("DEF_HOST").expect("missing DEF_HOST env var"));
+#[allow(clippy::expect_used)]
+static DEF_QUEUE: LazyLock<String> =
+    LazyLock::new(|| env::var("DEF_QUEUE").expect("missing DEF_QUEUE env var"));
 
 fn is_online(host: &str) -> Result<bool> {
     if host.is_empty() {
@@ -140,7 +143,14 @@ fn hdrs() -> Result<HeaderMap> {
     map.insert("User-Agent", HeaderValue::from_str(&AGENT)?);
     map.insert("X-Worker-Key", HeaderValue::from_str(&WORKER_KEY)?);
     map.insert("X-Worker-Jobs", HeaderValue::from_str(&jobs)?);
-    map.insert("X-Worker-Ident", HeaderValue::from_str(&WORKER_IDENT)?);
+    map.insert(
+        "X-Worker-Integrity",
+        HeaderValue::from_str("unimplemented")?,
+    );
+    map.insert(
+        "X-Worker-Ident",
+        HeaderValue::from_str(&WORKER_IDENT.to_string())?,
+    );
 
     Ok(map)
 }
@@ -289,6 +299,9 @@ fn handle(job: Job) -> Result<()> {
 
     Ok(())
 }
+
+/// This lock is used to only run one concurrent connection to the LPR server *ONLY*.
+static PRINT_LOCK: Mutex<()> = Mutex::new(());
 
 fn stream() -> Result<()> {
     let resp = match client()?

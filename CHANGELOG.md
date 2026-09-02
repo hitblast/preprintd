@@ -4,12 +4,15 @@ Active since `v0.1.0`.
 
 ### v0.7.2
 
-- Fix: nothing much, just some `clippy` errors.
 - Reduced `derive` macro implementations in some structs.
-- Added a new `BASE_URL` environment variable, which takes in the primary API URL the worker is going to use.
+- Added a new `BASE_URL` environment variable, which takes in the primary API URL that the worker is going to use. This is optional and, internally, the worker defaults to `crate::consts::DEF_API_URL` if the `BASE_URL` environment variable is not provided during runtime.
 - Unmerged the large `sock!()` macro into a more concise `crate::socket::create_lpr_sock` method (in a new `crate::socket` module).
 - LPR connectivity timeout for the `crate::is_online` function has been set to 1 second (from 800 milliseconds).
-- Added a new `consts` module (to be improved later).
+- The identity filepath is now shown around the start of the program if it was created/decided successfully.
+- Reverted the identity pattern to the earlier iteration.
+- Added these new modules:
+  - `consts`
+  - `atomic`
 
 ### v0.7.1
 
