@@ -140,14 +140,18 @@ fn hdrs() -> Result<HeaderMap> {
     let mut map: HeaderMap = HeaderMap::new();
     let jobs: String = JOBS_COMPLETED.load(Ordering::Relaxed).to_string();
 
-    map.insert("User-Agent", HeaderValue::from_str(&AGENT)?);
-    map.insert("X-Worker-Key", HeaderValue::from_str(&WORKER_KEY)?);
-    map.insert("X-Worker-Jobs", HeaderValue::from_str(&jobs)?);
-    map.insert("X-Worker-Health", HeaderValue::from_str("unimplemented")?);
-    map.insert(
-        "X-Worker-Ident",
-        HeaderValue::from_str(&WORKER_IDENT.to_string())?,
-    );
+    let mut iter = [
+        ("User-Agent", HeaderValue::from_str(&AGENT)?),
+        ("X-Worker-Key", HeaderValue::from_str(&WORKER_KEY)?),
+        ("X-Worker-Jobs", HeaderValue::from_str(&jobs)?),
+        ("X-Worker-Health", HeaderValue::from_str("unimplemeted")?),
+        ("X-Worker-Ident", HeaderValue::from_str(&WORKER_IDENT)?),
+    ]
+    .into_iter();
+
+    while let Some((key, val)) = iter.next() {
+        map.insert(key, val);
+    }
 
     Ok(map)
 }
