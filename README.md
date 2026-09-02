@@ -70,7 +70,7 @@ Make sure to replace the following fields/values:
 - `DEF_QUEUE`: The default queue name to send printable data to.
 
 2. Replace `/usr/bin/preprintd` with the appropriate path to the daemon binary.
-3. Replace `username` with your appropriate username on the machine. **Note that this step is important if you want to use `--inhibit` later on (see below).**
+3. Replace `username` with your appropriate username on the machine. **Note that this step is important if you want to use `--inhibit` later on (see "[Inhibitor Locks](#inhibitor-locks-linux-only)").**
 
 > [!WARNING]
 > If you prefer to use the service as a **user unit** (or, in other words, by passing in `systemctl --user`), please make sure to omit the `User` field from `[Service]`, otherwise it may cause errors during service startup.
