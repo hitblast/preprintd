@@ -19,6 +19,15 @@ Run the traditional release command:
 cargo build --release
 ```
 
+If you are on any operating system other than Linux, you can use [cargo-zigbuild](https://github.com/rust-cross/cargo-zigbuild) to use [Zig](https://ziglang.org/) as the linker for this project and enable cross-compilation.
+
+```bash
+cargo test-prod
+
+# this is an alias
+# it's the same as typing: cargo zigbuild --target aarch64-unknown-linux-gnu
+```
+
 You can also directly install the `preprintd` binary globally using [cargo](https://github.com/rust-lang/cargo):
 
 ```bash
@@ -28,9 +37,14 @@ cargo install preprintd
 > [!NOTE]
 > The release binary is optimized for the smallest-possible size, although you can change this behavior by disabling the optimizations specified in the `[profile.release]` section of [Cargo.toml](./Cargo.toml).
 
+> [!WARNING]
+> The `aarch64-apple-darwin` target is used as the _configured_ development target for this project. If you want to contribute to this project from another platform, please make the appropriate adjustments to the [rust-toolchain.toml](./rust-toolchain.toml). Note that if you're on [Zed](https://zed.dev/), you may also need to modify the LSP configuration in [.zed/settings.json](./.zed/settings.json) file.
+
 ### Prebuilt Binaries
 
-See the [GitHub Releases](https://github.com/hitblast/preprintd/releases) for a prebuilt binary for either Windows, Linux (built via CI workers running Ubuntu), or macOS. The Linux builds are done using the `x86_64-unknown-linux-musl` target in Rust (see [musl.cc](https://musl.cc/)).
+See the [GitHub Releases](https://github.com/hitblast/preprintd/releases) for a prebuilt binary for either Linux (built via CI workers running Ubuntu), or Windows. The Linux builds are done using the `x86_64-unknown-linux-musl` target in Rust (see [musl.cc](https://musl.cc/)).
+
+The macOS `aarch64-apple-darwin` is only used for preliminary development outside of production.
 
 ### Daemon Usage
 
@@ -109,7 +123,7 @@ Although most of the instructions above are primarily made for Linux (and can be
 
 #### Identifying Workers
 
-While claiming a job, each worker identifies itself with an `X-Worker-Ident` header which has a pattern of `<UUID>;<ARCH>` (e.g. `03780793-e7af-49c1-b55d-92ff57be8c6e;aarch64-apple-darwin`).
+While claiming a job, each worker identifies itself with an `X-Worker-Ident` header which has a pattern of `<UUID>;<ARCH>` (e.g. `03780793-e7af-49c1-b55d-92ff57be8c6e;x86_64-unknown-linux-gnu`).
 
 Visible from the pattern, the identity has two parts:
 

@@ -1,0 +1,2 @@
+[alias]
+test-prod = "zigbuild --target aarch64-unknown-linux-gnu"

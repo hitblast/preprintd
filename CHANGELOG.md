@@ -10,6 +10,7 @@ Active since `v0.1.0`.
 - LPR connectivity timeout for the `crate::is_online` function has been set to 1 second (from 800 milliseconds).
 - The identity filepath is now shown around the start of the program if it was created/decided successfully.
 - Reverted the identity pattern to the earlier iteration.
+- Not being able to get the inibitor lock now does not end in a catastrophic failure.
 - Added these new modules:
   - `consts`
   - `atomic`

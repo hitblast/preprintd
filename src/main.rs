@@ -389,7 +389,16 @@ fn stream() -> Result<()> {
 fn main() -> Result<()> {
     #[cfg(target_os = "linux")]
     let _sleep_inhibitor = if *INHIBIT {
-        Some(acquire_sleep_inhibitor()?)
+        match acquire_sleep_inhibitor() {
+            Ok(i) => Some(i),
+            Err(e) => {
+                debug_log!(
+                    LogLevel::Error,
+                    "Failed to get inhibitor lock even though `--inhibit` was passed: {e}"
+                );
+                None
+            }
+        }
     } else {
         None
     };
