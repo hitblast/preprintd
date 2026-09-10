@@ -1,2 +1,5 @@
 /target
 .DS_Store
+
+*.md
+!README.md
