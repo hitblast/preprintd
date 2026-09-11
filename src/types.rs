@@ -33,3 +33,11 @@ pub struct ClaimJobRequestBody<'a> {
 pub struct ClaimJobResponseBody {
     pub claimed: Option<bool>,
 }
+
+#[derive(Serialize)]
+pub struct CompleteJobRequestBody<'a> {
+    pub id: &'a str,
+    pub success: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<&'a str>,
+}
