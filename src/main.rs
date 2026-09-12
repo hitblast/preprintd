@@ -60,7 +60,7 @@ use crate::{
     consts::{DEF_LPR_PORT, NUL, VERSION},
     crypto::decrypt,
     socket::create_lpr_sock,
-    types::{ClaimJobRequestBody, ClaimJobResponseBody},
+    types::{ClaimJobRequestBody, ClaimJobResponseBody, CompleteJobRequestBody},
     types::{Job, LogLevel},
 };
 
@@ -198,6 +198,26 @@ fn claim_job(id: &str) -> Result<bool> {
     Ok(claim)
 }
 
+fn complete_job(id: &str, success: bool, error: Option<&str>) -> Result<bool> {
+    let body = CompleteJobRequestBody { id, success, error };
+
+    let resp = client()?
+        .post(format!("{}/print/complete", BASE_URL.as_str()))
+        .body(serde_json::to_string(&body)?)
+        .header("Content-Type", "application/json")
+        .headers(hdrs()?)
+        .timeout(Duration::from_secs(10))
+        .send();
+
+    match resp {
+        Ok(r) => Ok(r.status().is_success()),
+        Err(e) => {
+            debug_log!(LogLevel::Error, "(Send) /print/complete: {e}");
+            Ok(false)
+        }
+    }
+}
+
 fn handle(job: Job) -> Result<()> {
     let job_id = {
         if let Some(j_id) = job.id.as_deref()
@@ -283,15 +303,18 @@ fn handle(job: Job) -> Result<()> {
         Ok(true) => {
             debug_log!(LogLevel::Ok, "Job transferred successfully.");
             JOBS_COMPLETED.fetch_add(1, Ordering::Relaxed);
+            let _ = complete_job(job_id, true, None);
         }
         Ok(false) => {
             debug_log!(
                 LogLevel::Warn,
                 "Unknown failure while sending printer socket."
             );
+            let _ = complete_job(job_id, false, Some("Unknown failure sending to printer"));
         }
         Err(e) => {
             debug_log!(LogLevel::Error, "Printer transfer failed: {e}");
+            let _ = complete_job(job_id, false, Some(&e.to_string()));
         }
     };
 
