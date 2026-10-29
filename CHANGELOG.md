@@ -2,6 +2,10 @@
 
 Active since `v0.1.0`.
 
+### v0.8.1
+
+Maintenance release - no functionality was changed.
+
 ### v0.8.0
 
 - Reduced `derive` macro implementations in some structs.
