@@ -2,6 +2,10 @@
 
 Active since `v0.1.0`.
 
+### v0.9.0
+
+- This release adds crucial, self-updating functionality for the daemon for it to sustain operation and also receive updates periodically.
+
 ### v0.8.1
 
 Maintenance release - no functionality was changed.

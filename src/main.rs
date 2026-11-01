@@ -39,6 +39,7 @@ mod ident;
 mod socket;
 mod tcp_extras;
 mod types;
+mod updater;
 mod zbus;
 
 use anyhow::Result;
@@ -53,6 +54,8 @@ use tcp_extras::TcpExtras;
 use crate::atomic::JOBS_COMPLETED;
 use crate::consts::DEF_API_URL;
 use crate::ident::init_ident_and_file;
+
+use crate::updater::spawn_update_thread;
 #[cfg(target_os = "linux")]
 use crate::zbus::acquire_sleep_inhibitor;
 use crate::{
@@ -406,6 +409,8 @@ fn main() -> Result<()> {
 
     let mut iter_count = 0;
     let mut delay = 1.0_f64;
+
+    spawn_update_thread();
 
     loop {
         let started_at = Instant::now();
