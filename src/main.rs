@@ -58,6 +58,7 @@ use crate::ident::init_ident_and_file;
 use crate::updater::spawn_update_thread;
 #[cfg(target_os = "linux")]
 use crate::zbus::acquire_sleep_inhibitor;
+
 use crate::{
     client::client,
     consts::{DEF_LPR_PORT, NUL, VERSION},

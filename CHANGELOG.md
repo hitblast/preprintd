@@ -5,6 +5,7 @@ Active since `v0.1.0`.
 ### v0.9.0
 
 - This release adds crucial, self-updating functionality for the daemon for it to sustain operation and also receive updates periodically.
+- Upgraded the `zbus` library API compatibility.
 
 ### v0.8.1
 
