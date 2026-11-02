@@ -2,6 +2,10 @@
 
 Active since `v0.1.0`.
 
+### v0.9.1
+
+- This release is a minor patch-release which cleans up some code, fixes `clippy` lint-errors and also works as a testbed for `v0.9.0`'s self-updating functionality.
+
 ### v0.9.0
 
 - This release adds crucial, self-updating functionality for the daemon for it to sustain operation and also receive updates periodically.
