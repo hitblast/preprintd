@@ -15,11 +15,13 @@ This tiny worker is just a stateless SSE/`TcpStream` hybrid under the hood, whic
 
 Requires [Rust](https://rust-lang.org/) (2024 edition or later) to be installed.
 
-Run the traditional release command:
+Run the traditional build-release command:
 
 ```bash
 cargo build --release
 ```
+
+#### Cross-Compiling using `cargo-zigbuild`
 
 If you are on any operating system other than Linux, you can use [cargo-zigbuild](https://github.com/rust-cross/cargo-zigbuild) to use [Zig](https://ziglang.org/) as the linker for this project and enable cross-compilation.
 
@@ -31,6 +33,30 @@ cargo release-prod
 # cargo zigbuild --release --target aarch64-unknown-linux-gnu
 ```
 
+#### Cross-Compiling on macOS
+
+On macOS, `cargo-zigbuild` might work for command-line usage, but it does not work well alongside code editors as a standalone linker since it cannot be configured (for now) _like_ one. So it is recommended that you use [homebrew-macos-cross-toolchains](https://github.com/messense/homebrew-macos-cross-toolchains) instead.
+
+Install the `aarch64-unknown-linux-gnu` target using `rustup`:
+
+```bash
+rustup target add aarch64-unknown-linux-gnu
+```
+
+Ensure you have [Homebrew](https://brew.sh/) installed. Now run:
+
+```bash
+brew install messense/macos-cross-toolchains/aarch64-unknown-linux-gnu
+```
+
+Now you can compile as usual, as this project already contains batteries to cross-compile for `aarch64-unknown-linux-gnu`:
+
+```bash
+cargo build --target aarch64-unknown-linux-gnu
+```
+
+### Prebuilt Binaries
+
 You can also directly install the `preprintd` binary globally using [cargo](https://github.com/rust-lang/cargo):
 
 ```bash
@@ -39,9 +65,6 @@ cargo install preprintd
 
 > [!NOTE]
 > The release binary is optimized for the smallest-possible size, although you can change this behavior by disabling the optimizations specified in the `[profile.release]` section of [Cargo.toml](./Cargo.toml).
-
-> [!WARNING]
-> The `aarch64-apple-darwin` target is used as the _configured_ development target for this project. If you want to contribute to this project from another platform, please make the appropriate adjustments to [./rust-toolchain.toml](./rust-toolchain.toml). Note that if you're on [Zed](https://zed.dev/), you may also need to modify the LSP configuration in [./.zed/settings.json](./.zed/settings.json).
 
 ### Prebuilt Binaries
 
@@ -132,13 +155,6 @@ Visible from the pattern, the identity has two parts:
 
 - `<UUID>`: A randomly-generated UUID (v4) string literal, which is used to give the worker a unique identity to be correlated with.
 - `<ARCH>`: The architecture of _the compiled binary_ of the worker.
-
-#### Worker Health-Check
-
-> [!WARNING]
-> Unimplemented. I'm still brainstorming this.
-
-Every worker can occasionally become prone to errors due to software glitches, hence another header, namely `X-Worker-Health`, is passed in with all the requests that the worker makes.
 
 ### Reference Implementation
 

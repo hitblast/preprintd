@@ -2,9 +2,6 @@
   "lsp": {
     "rust-analyzer": {
       "initialization_options": {
-        "check": {
-          "command": "zigbuild",
-        },
         "cargo": {
           "target": "aarch64-unknown-linux-gnu",
         },
