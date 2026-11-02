@@ -144,7 +144,7 @@ fn hdrs() -> Result<HeaderMap> {
     let mut map: HeaderMap = HeaderMap::new();
     let jobs: String = JOBS_COMPLETED.load(Ordering::Relaxed).to_string();
 
-    let mut iter = [
+    let iter = [
         ("User-Agent", HeaderValue::from_str(&AGENT)?),
         ("X-Worker-Key", HeaderValue::from_str(&WORKER_KEY)?),
         ("X-Worker-Jobs", HeaderValue::from_str(&jobs)?),
@@ -153,7 +153,7 @@ fn hdrs() -> Result<HeaderMap> {
     ]
     .into_iter();
 
-    while let Some((key, val)) = iter.next() {
+    for (key, val) in iter {
         map.insert(key, val);
     }
 
