@@ -19,26 +19,25 @@ jobs:
     runs-on: windows-latest
 
     env:
-      FILE_NAME: target/release/preprintd-win-x86_64.zip
+      TARGET: x86_64-pc-windows-msvc
+      FILE_NAME: target/release/preprintd-x86_64-pc-windows-msvc.zip
 
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions-rs/toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          profile: minimal
-          toolchain: stable
-          override: true
+          target: x86_64-pc-windows-msvc
 
       - uses: Swatinem/rust-cache@v2
       - uses: mozilla-actions/sccache-action@v0.0.9
 
-      - run: cargo build --release --quiet --locked
+      - run: cargo build --release --quiet --locked --target ${{ env.TARGET }}
       - run: sccache --show-stats || true
 
       - name: Compress binary
         run: |
-          powershell -Command "Compress-Archive -Path target/release/preprintd.exe -DestinationPath $env:FILE_NAME"
+          powershell -Command "Compress-Archive -Path target/${{ env.TARGET }}/release/preprintd.exe -DestinationPath $env:FILE_NAME"
 
       - name: Upload compressed binary to release
         uses: svenstaro/upload-release-action@v2
@@ -54,25 +53,18 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            suffix: linux-musl-x86_64
-          # - os: macos-latest
-          #   target: aarch64-apple-darwin
-          #   suffix: macos-arm64
 
     runs-on: ${{ matrix.os }}
 
     env:
-      FILE_NAME: target/release/preprintd-${{ matrix.suffix }}.tar.gz
+      FILE_NAME: target/release/preprintd-${{ matrix.target }}.tar.gz
 
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions-rs/toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          profile: minimal
-          toolchain: stable
           target: ${{ matrix.target }}
-          override: true
 
       - uses: Swatinem/rust-cache@v2
       - uses: mozilla-actions/sccache-action@v0.0.9

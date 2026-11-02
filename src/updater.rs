@@ -1,46 +1,33 @@
 use std::env;
-use std::process::Command;
 use std::thread;
 use std::time::Duration;
 
 use anyhow::Result;
+use self_update::backends::github::Update;
 use self_update::cargo_crate_version;
 
 use crate::types::LogLevel;
 
-fn is_latest() -> Result<bool> {
-    let releases = self_update::backends::github::ReleaseList::configure()
-        .repo_owner("hitblast")
-        .repo_name("preprintd")
-        .build()?
-        .fetch()?;
-
-    let releases_str = releases
-        .clone()
-        .into_iter()
-        .map(|f| f.version().to_string())
-        .collect::<Vec<String>>();
-
-    debug_log!(LogLevel::Ok, "Found releases:");
-    debug_log!(LogLevel::Ok, "{:?}\n", releases_str);
-
-    let latest_version = releases
-        .latest()
-        .map(|release| release.version())
-        .unwrap_or_else(|| cargo_crate_version!());
-
-    Ok(latest_version == cargo_crate_version!())
-}
-
-fn apply_update_and_restart() -> Result<bool> {
-    let status = self_update::backends::github::Update::configure()
+fn get_update_backend() -> Result<Update> {
+    let update = self_update::backends::github::Update::configure()
         .repo_owner("hitblast")
         .repo_name("preprintd")
         .bin_name("preprintd")
-        .show_download_progress(false)
+        .target(self_update::get_target())
         .current_version(cargo_crate_version!())
-        .build()?
-        .update()?;
+        .no_confirm(true)
+        .show_output(false)
+        .build()?;
+
+    Ok(update)
+}
+
+fn is_latest() -> Result<bool> {
+    Ok(get_update_backend()?.is_update_available()?.is_none())
+}
+
+fn apply_update_and_restart() -> Result<bool> {
+    let status = get_update_backend()?.update()?;
 
     if status.is_updated() {
         debug_log!(
@@ -49,29 +36,10 @@ fn apply_update_and_restart() -> Result<bool> {
             status.version()
         );
 
-        // restart logic
-        #[cfg(unix)]
-        {
-            use std::os::unix::process::CommandExt;
-            let args: Vec<String> = env::args().collect();
-            let current_exe = env::current_exe()?;
-
-            // re-exec replaces the current process image in-place
-            // (preserves PID under systemd)
-            //
-            let err = Command::new(&current_exe).args(&args[1..]).exec();
-            debug_log!(LogLevel::Error, "Failed to re-exec updated daemon: {err}");
-            std::process::exit(1);
-        }
-
-        #[cfg(not(unix))]
-        {
-            // exit cleanly for process managers (systemd/docker) configured with Restart=always
-            std::process::exit(0);
-        }
+        self_update::restart::restart()?;
     }
 
-    Ok(false)
+    Ok(status.is_updated())
 }
 
 /// Spawns a background thread that polls for updates every 24 hours.

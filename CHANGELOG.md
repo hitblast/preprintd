@@ -2,6 +2,11 @@
 
 Active since `v0.1.0`.
 
+### v0.9.2
+
+- This update refines the logic to use more of the preincluded stuff in the `self_update` library for the whole update-flow, such as restarting the process (but while maintaining the same PID on Linux while running as a process via `self_update::restart::restart`).
+- Updated the GitHub Actions release workflow to have proper Rust target-triples as release artifact names.
+
 ### v0.9.1
 
 - This release is a minor patch-release which cleans up some code, fixes `clippy` lint-errors and also works as a testbed for `v0.9.0`'s self-updating functionality.
