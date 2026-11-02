@@ -1,3 +1,5 @@
+<img src="logo.png" width="200px" align="right">
+
 ## preprintd
 
 Printer swarm-worker daemon implementation for [PreConnect](https://github.com/sabbirba/preconnect).
