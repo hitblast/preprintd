@@ -15,8 +15,14 @@ fn is_latest() -> Result<bool> {
         .build()?
         .fetch()?;
 
+    let releases_str = releases
+        .clone()
+        .into_iter()
+        .map(|f| f.version().to_string())
+        .collect::<Vec<String>>();
+
     debug_log!(LogLevel::Ok, "Found releases:");
-    debug_log!(LogLevel::Ok, "{:#?}\n", releases);
+    debug_log!(LogLevel::Ok, "{:?}\n", releases_str);
 
     let latest_version = releases
         .latest()
@@ -43,14 +49,16 @@ fn apply_update_and_restart() -> Result<bool> {
             status.version()
         );
 
-        // --- Restart Logic ---
+        // restart logic
         #[cfg(unix)]
         {
             use std::os::unix::process::CommandExt;
             let args: Vec<String> = env::args().collect();
             let current_exe = env::current_exe()?;
 
-            // Re-exec replaces the current process image in-place (preserves PID under systemd)
+            // re-exec replaces the current process image in-place
+            // (preserves PID under systemd)
+            //
             let err = Command::new(&current_exe).args(&args[1..]).exec();
             debug_log!(LogLevel::Error, "Failed to re-exec updated daemon: {err}");
             std::process::exit(1);
@@ -58,7 +66,7 @@ fn apply_update_and_restart() -> Result<bool> {
 
         #[cfg(not(unix))]
         {
-            // Exit cleanly for process managers (systemd/docker) configured with Restart=always
+            // exit cleanly for process managers (systemd/docker) configured with Restart=always
             std::process::exit(0);
         }
     }
