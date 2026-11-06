@@ -2,6 +2,11 @@
 
 Active since `v0.1.0`.
 
+### v0.9.3
+
+- Updated `zbus` to `6.2.1`.
+- Also a testbed version for the self-updater functionality.
+
 ### v0.9.2
 
 - This update refines the logic to use more of the preincluded stuff in the `self_update` library for the whole update-flow, such as restarting the process (but while maintaining the same PID on Linux while running as a process via `self_update::restart::restart`).
