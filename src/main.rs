@@ -39,6 +39,7 @@ mod ident;
 mod socket;
 mod tcp_extras;
 mod types;
+mod update;
 mod zbus;
 
 use anyhow::Result;
@@ -113,7 +114,7 @@ static BASE_DOMAIN: LazyLock<&str> = LazyLock::new(|| {
 });
 static ALIAS: LazyLock<String> =
     LazyLock::new(|| env::var("ALIAS").unwrap_or(env!("CARGO_PKG_NAME").to_string()));
-static AGENT: LazyLock<String> = LazyLock::new(|| format!("{}/{}", ALIAS.as_str(), VERSION));
+pub static AGENT: LazyLock<String> = LazyLock::new(|| format!("{}/{}", ALIAS.as_str(), VERSION));
 #[allow(clippy::expect_used)]
 static DEF_HOST: LazyLock<String> =
     LazyLock::new(|| env::var("DEF_HOST").expect("missing DEF_HOST env var"));
@@ -151,6 +152,13 @@ fn hdrs() -> Result<HeaderMap> {
         "X-Worker-Ident",
         HeaderValue::from_str(&WORKER_IDENT.to_string())?,
     );
+    let last_update_check = update::LAST_UPDATE_CHECK.load(Ordering::Relaxed);
+    if last_update_check > 0 {
+        map.insert(
+            "X-Last-Update-Checked",
+            HeaderValue::from(last_update_check),
+        );
+    }
 
     Ok(map)
 }
@@ -323,7 +331,6 @@ fn handle(job: Job) -> Result<()> {
     Ok(())
 }
 
-/// This lock is used to only run one concurrent connection to the LPR server *ONLY*.
 static PRINT_LOCK: Mutex<()> = Mutex::new(());
 
 fn stream() -> Result<()> {
@@ -430,6 +437,7 @@ fn main() -> Result<()> {
     let mut delay = 1.0_f64;
 
     loop {
+        update::check_for_update_if_due();
         let started_at = Instant::now();
         let result = stream();
 
