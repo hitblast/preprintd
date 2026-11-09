@@ -158,10 +158,7 @@ Visible from the pattern, the identity has two parts:
 
 ### Reference Implementation
 
-See: https://github.com/sabbirba/preconnect/blob/main/printer.py (courtesy: [@sabbirba](https://github.com/sabbirba))
-
-> [!NOTE]
-> This version is primarily made and maintained for the Windows operating system.
+The reference implementation of this worker can be found in the official PreConnect repository ([`printer.py`](https://github.com/sabbirba/preconnect/blob/main/printer.py)) (courtesy: [@sabbirba](https://github.com/sabbirba)).
 
 ### License
 

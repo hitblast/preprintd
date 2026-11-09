@@ -1,12 +1,15 @@
 use std::env;
+use std::sync::{LazyLock, Mutex};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use self_update::backends::github::Update;
 use self_update::cargo_crate_version;
 
 use crate::types::LogLevel;
+
+pub static LAST_UPDATE_CHECK: LazyLock<Mutex<Option<u64>>> = LazyLock::new(|| Mutex::new(None));
 
 fn get_update_backend() -> Result<Update> {
     let update = self_update::backends::github::Update::configure()
@@ -23,7 +26,17 @@ fn get_update_backend() -> Result<Update> {
 }
 
 fn is_latest() -> Result<bool> {
-    Ok(get_update_backend()?.is_update_available()?.is_none())
+    let mut last_check = LAST_UPDATE_CHECK
+        .lock()
+        .map_err(|_| anyhow!("last update check mutex lock poisoned"))?;
+
+    let now = SystemTime::now();
+    let duration_since_last_check = now.duration_since(UNIX_EPOCH)?.as_secs();
+
+    let is_latest = get_update_backend()?.is_update_available()?.is_none();
+    *last_check = Some(duration_since_last_check);
+
+    Ok(is_latest)
 }
 
 fn apply_update_and_restart() -> Result<bool> {

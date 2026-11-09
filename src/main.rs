@@ -55,7 +55,7 @@ use crate::atomic::JOBS_COMPLETED;
 use crate::consts::DEF_API_URL;
 use crate::ident::init_ident_and_file;
 
-use crate::updater::spawn_update_thread;
+use crate::updater::{LAST_UPDATE_CHECK, spawn_update_thread};
 #[cfg(target_os = "linux")]
 use crate::zbus::acquire_sleep_inhibitor;
 
@@ -144,11 +144,20 @@ fn hdrs() -> Result<HeaderMap> {
     let mut map: HeaderMap = HeaderMap::new();
     let jobs: String = JOBS_COMPLETED.load(Ordering::Relaxed).to_string();
 
+    let last_update_check = LAST_UPDATE_CHECK
+        .lock()
+        .map_err(|_| anyhow::anyhow!("last update check mutex lock poisoned"))?
+        .unwrap_or(0)
+        .to_string();
+
     let iter = [
         ("User-Agent", HeaderValue::from_str(&AGENT)?),
         ("X-Worker-Key", HeaderValue::from_str(&WORKER_KEY)?),
         ("X-Worker-Jobs", HeaderValue::from_str(&jobs)?),
-        ("X-Worker-Health", HeaderValue::from_str("unimplemeted")?),
+        (
+            "X-Last-Update-Check",
+            HeaderValue::from_str(&last_update_check)?,
+        ),
         ("X-Worker-Ident", HeaderValue::from_str(&WORKER_IDENT)?),
     ]
     .into_iter();

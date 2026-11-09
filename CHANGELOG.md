@@ -2,6 +2,11 @@
 
 Active since `v0.1.0`.
 
+### v0.9.4
+
+- Updated `uuid` to `1.29.2`.
+- Added a new `X-Last-Update-Check` header to the worker's common HTTP requests via the `hdrs()` function.
+
 ### v0.9.3
 
 - Updated `zbus` to `6.2.1`.
